@@ -1,5 +1,6 @@
 import { requireAuth } from './guard.js'
 import { loadproductsSelect, buildQuery, fetchJSON, getToken } from './api.js'
+import { toast } from './ui/modal.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor'])
@@ -19,21 +20,21 @@ function showEmpty(msg = 'Sin datos') {
 }
 
 function getFilters() {
-  let ini = document.getElementById('filter-start-date')?.value || '';
-  let fin = document.getElementById('filter-end-date')?.value || '';
+  let ini = document.getElementById('filter-start-date')?.value || ''
+  let fin = document.getElementById('filter-end-date')?.value || ''
 
   if (ini || fin) {
     if (!ini || !fin) {
-      alert('Selecciona Fecha inicio y Fecha fin');
-      return;
+      toast('Selecciona Fecha inicio y Fecha fin', 'error')
+      return
     }
     if (ini > fin) {
-      alert('La Fecha inicio no puede ser mayor que la Fecha fin');
-      return;
+      toast('La Fecha inicio no puede ser mayor que la Fecha fin', 'error')
+      return
     }
 
-    ini = new Date(ini).toISOString().slice(0, 10);
-    fin = new Date(fin).toISOString().slice(0, 10);
+    ini = new Date(ini).toISOString().slice(0, 10)
+    fin = new Date(fin).toISOString().slice(0, 10)
 
     return {
       idCargo: document.querySelector('#filtro-id-charge')?.value?.trim() || '',
@@ -44,7 +45,7 @@ function getFilters() {
       idSuscripcion: document.querySelector('#filter-id-subscription')?.value?.trim() || '',
       fecha_inicio: ini,
       fecha_fin: fin,
-      limit: 5
+      limit: 5,
     }
   }
 
@@ -55,7 +56,7 @@ function getFilters() {
     notas: document.querySelector('#filter-notes')?.value?.trim() || '',
     idTransaccion: document.querySelector('#filter-id-transaction')?.value?.trim() || '',
     idSuscripcion: document.querySelector('#filter-id-subscription')?.value?.trim() || '',
-    limit: 5
+    limit: 5,
   }
 }
 
@@ -112,7 +113,11 @@ function render(rows) {
       <td>${r.id_transaccion ?? ''}</td>
       <td>${r.id_suscripcion ?? ''}</td>
       <td>
-        ${r.evidencia_pago_url ? `<a class="url" href="${r.evidencia_pago_url}" target="_blank" rel="noopener">ver PDF</a>` : '<span class="muted">—</span>'}
+        ${
+          r.evidencia_pago_url
+            ? `<a class="url" href="${r.evidencia_pago_url}" target="_blank" rel="noopener">ver PDF</a>`
+            : '<span class="muted">—</span>'
+        }
       </td>
       <td class="row-actions">
         <input type="file" accept="application/pdf" class="file" />
@@ -121,27 +126,27 @@ function render(rows) {
     const fileInput = tr.querySelector('input[type="file"]')
 
     fileInput.addEventListener('change', async (ev) => {
-      ev.preventDefault()          
+      ev.preventDefault()
       ev.stopPropagation()
       try {
         const file = fileInput?.files?.[0]
         if (!file) {
-          alert('Selecciona un PDF')
+          toast('Selecciona un PDF', 'error')
           return
         }
         if (file.type !== 'application/pdf') {
-          alert('El archivo debe ser PDF')
+          toast('El archivo debe ser PDF', 'error')
           return
         }
-        
+
         const { url } = await uploadFile(file)
-        await updateEvidencia(r.id_transaccion, url) 
+        await updateEvidencia(r.id_transaccion, url)
 
         tr.cells[8].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver PDF</a>`
-        alert('El archivo fue subido correctamente')
+        toast('El archivo fue subido correctamente', 'ok')
       } catch (err) {
         console.error(err)
-        alert('Falló la carga/actualización')
+        toast('Falló la carga/actualización', 'error')
       }
     })
 
@@ -158,16 +163,24 @@ async function buscar() {
   } catch (err) {
     console.error('Error buscando payments', err)
     showEmpty('No se pudo cargar la información')
+    toast('Error al cargar los pagos', 'error')
   }
 }
 
 function limpiar() {
-  ;['#filtro-id-charge', '#filtro-partner', '#filter-product', '#filter-notes', '#filter-id-transaction', '#filter-id-subscription']
-    .forEach((id) => {
-      const el = document.querySelector(id)
-      if (el) el.value = ''
-    })
+  ;[
+    '#filtro-id-charge',
+    '#filtro-partner',
+    '#filter-product',
+    '#filter-notes',
+    '#filter-id-transaction',
+    '#filter-id-subscription',
+  ].forEach((id) => {
+    const el = document.querySelector(id)
+    if (el) el.value = ''
+  })
   showEmpty('Ajusta los filters y presiona Buscar')
+  toast('Filtros limpiados', 'ok')
 }
 
 window.addEventListener('DOMContentLoaded', () => {
