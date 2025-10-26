@@ -1,44 +1,44 @@
 :root {
     --card-max: 760px;
     --gap: 12px;
-    --muted: #a0a0a0;
     --line: rgba(255, 255, 255, 0.08);
+    --muted: #a0a0a0;
     --primary: #00aaff;
 }
 
 .container-auth {
     display: grid;
-    place-items: start center;
     min-height: 100dvh;
     padding: 24px;
+    place-items: start center;
 }
 
 .auth-card {
-    width: min(100%, var(--card-max));
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 24px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    width: min(100%, var(--card-max));
 }
 
 .auth-header {
-    text-align: center;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
 .auth-links {
-    text-align: center;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
 .section-link {
     color: var(--primary);
     cursor: pointer;
-    text-decoration: underline;
     font-weight: 600;
-    user-select: none;
+    text-decoration: underline;
     transition: color 0.2s;
+    user-select: none;
 }
 
 .section-link.active {
@@ -47,8 +47,8 @@
 }
 
 .form-section {
-    display: none;
     animation: fadeIn 0.3s ease;
+    display: none;
 }
 
 .form-section.active {
@@ -68,10 +68,10 @@
 }
 
 .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap);
     align-items: end;
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr 1fr;
 }
 
 @media (max-width: 720px) {
@@ -81,23 +81,23 @@
 }
 
 label {
-    display: grid;
-    gap: 6px;
-    font-size: .82rem;
-    text-transform: uppercase;
     color: var(--muted);
+    display: grid;
+    font-size: .82rem;
+    gap: 6px;
+    text-transform: uppercase;
 }
 
 input[type="email"],
 input[type="password"],
 input[type="text"] {
-    height: 40px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
     color: #ddd;
-    padding: 0 10px;
+    height: 40px;
     outline: none;
+    padding: 0 10px;
 }
 
 input::placeholder {
@@ -105,28 +105,28 @@ input::placeholder {
 }
 
 .form-actions {
-    margin-top: 1rem;
     display: flex;
     gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 .msg {
+    color: var(--muted);
     margin-top: 8px;
     min-height: 20px;
-    color: var(--muted);
 }
 
 .footer-return {
-    text-align: center;
     margin-top: 16px;
+    text-align: center;
 }
 
 .notice {
     background: rgba(255, 255, 255, .06);
     border: 1px solid var(--line);
-    padding: .75rem;
     border-radius: 8px;
-    margin-bottom: 1rem;
     color: #ddd;
     font-size: .95rem;
+    margin-bottom: 1rem;
+    padding: .75rem;
 }

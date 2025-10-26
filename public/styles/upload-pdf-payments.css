@@ -1,16 +1,11 @@
-/* ==== CARGA PDF – AJUSTE FINO ==== */
-
-/* 0) Escala base más compacta dentro de la página */
 .page-wrap {
-    /* reduce todo ~12–15% sin tocar otras pantallas */
     font-size: 14px;
 }
 
-/* 1) filters: grid + tamaño de texto y altura más pequeños */
 .range-card.filters {
     display: grid;
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
     gap: 12px 14px;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
     padding: 16px;
 }
 
@@ -27,27 +22,25 @@
 }
 
 .range-card.filters label {
+    color: var(--rng-sub, #94a3b8);
     font-size: .72rem;
-    /* label más pequeño */
     letter-spacing: .06em;
     text-transform: uppercase;
-    color: var(--rng-sub, #94a3b8);
 }
 
 .range-card.filters input[type="text"],
 .range-card.filters input[type="search"],
 .range-card.filters input[type="date"] {
-    margin-top: 6px;
-    height: 36px;
-    /* antes 42px */
-    border-radius: 8px;
-    border: 1px solid var(--rng-brd, #1e293b);
     background: #0b1224;
+    border: 1px solid var(--rng-brd, #1e293b);
+    border-radius: 8px;
     color: var(--rng-txt, #e2e8f0);
     font-size: .9rem;
-    /* texto del input más pequeño */
-    padding: 0 .65rem;
+    height: 36px;
+    /* antes 42px */
+    margin-top: 6px;
     outline: none;
+    padding: 0 .65rem;
     transition: border-color .18s ease, box-shadow .18s ease;
 }
 
@@ -62,10 +55,10 @@
 }
 
 .btn {
+    border-radius: 8px;
     height: 36px;
     line-height: 36px;
     padding: 0 12px;
-    border-radius: 8px;
 }
 
 /* ====== CARGA PDF – REFINES UI ====== */
@@ -86,14 +79,14 @@
 .filters .filter-item input[type="search"],
 .filters .filter-item input[type="date"],
 .filters .filter-item select {
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid var(--rng-brd, #1e293b);
     background: #0f1316;
+    border: 1px solid var(--rng-brd, #1e293b);
+    border-radius: 10px;
     color: var(--rng-txt, #e2e8f0);
     font-size: .95rem;
-    padding: 0 .7rem;
+    height: 38px;
     outline: none;
+    padding: 0 .7rem;
     transition: border-color .18s ease, box-shadow .18s ease;
 }
 
