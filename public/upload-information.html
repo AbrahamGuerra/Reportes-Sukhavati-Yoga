@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subir información | Sukhavati</title>
+    <link rel="stylesheet" href="./styles/style.css" />
+</head>
+
+<body>
+    <main id="uploader" class="container">
+        <div class="card">
+            <div class="header">
+                <h1>Subir información</h1>
+                <button class="btn-outline" id="btn-browse">Subir Excel</button>
+                <input type="file" id="file" accept=".xlsx" hidden />
+            </div>
+
+            <p class="muted">Sube archivos Excel (.xlsx) y selecciona qué tipo de información contiene.</p>
+
+            <form id="form">
+                <label>Tipo de importación</label>
+                <select id="type">
+                    <option value="products">Productos</option>
+                    <option value="coupons">Cupones</option>
+                    <option value="partners">Socios</option>
+                    <option value="subscriptions">Suscripciones</option>
+                    <option value="activities">Actividades</option>
+                    <option value="payments">Pagos</option>
+                </select>
+
+                <label>Archivo (.xlsx)</label>
+                <div class="file-row">
+                    <button type="button" class="btn" id="btn-choose">Seleccionar archivo</button>
+                    <span id="file-name" class="file-name">Ningún archivo seleccionado</span>
+                </div>
+
+                <label>Unidad de negocio</label>
+                <select id="business-unit">
+                    <option value="reportes_sukhavati">Sukhavati</option>
+                </select>
+
+                <button class="btn primary" id="submit">Subir y procesar</button>
+            </form>
+
+            <pre id="result" class="result"></pre>
+
+            <div style="margin-top:14px;">
+                <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="./scripts/guard.js"></script>
+    <script type="module" src="./scripts/upload-information.js"></script>
+</body>
+
+</html>

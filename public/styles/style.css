@@ -1,0 +1,261 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0d0f;
+  --card: #14181b;
+  --muted: #9aa4ad;
+  --text: #e6edf3;
+  --primary: #5b9cff;
+  --border: #20262b;
+  --radius: 16px;
+  --page-max: 1200px
+}
+* { box-sizing: border-box; }
+body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; background: var(--bg); color: var(--text); }
+.container { min-height: 100dvh; display:flex; align-items:center; justify-content:center; padding: 32px; }
+.card {
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+.table-area {
+  width: 100%;
+}
+.header { display:flex; gap:12px; align-items:center; }
+h1 { margin:0; font-size: 28px; font-weight:700; letter-spacing:.2px; }
+.muted { color: var(--muted); margin: 8px 0 18px; }
+form { display:grid; grid-template-columns: 1fr; gap: 10px; }
+label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing:.08em; }
+select { background:#0f1316; color: var(--text); border:1px solid var(--border); padding: 12px; border-radius: 10px; }
+.file-row { display:flex; align-items:center; gap: 12px; }
+.file-name { color: var(--muted); font-size: 14px; }
+.btn, .btn-outline, .btn.primary { border-radius: 12px; padding: 10px 14px; background:#0f1316; color:var(--text); border:1px solid var(--border); cursor:pointer; }
+.btn:hover, .btn-outline:hover { border-color:#2b343b; }
+.btn.primary { background: var(--primary); border-color: transparent; color: #fff; font-weight:600; }
+.btn.primary:hover { filter: brightness(1.05); }
+.result { background:#0a0e11; border:1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 14px; max-height: 260px; overflow:auto; }
+
+.hidden {
+  display: none;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 20px;
+}
+
+.menu h1 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.menu .btn {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* === Contenedor principal de filters === */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+/* === Fila interna de filters === */
+.filters .row {
+  display: flex;
+  flex-wrap: wrap;
+  /* 👈 hace que los filters se acomoden en varias líneas */
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* === Cada filtro individual === */
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  /* ancho mínimo legible */
+  flex: 1 1 180px;
+  /* 👈 se expande o reduce según espacio */
+}
+
+/* === Selects e inputs dentro de filters === */
+.filter-item select,
+.filter-item input[type="date"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+/* === Ajustes para pantallas pequeñas === */
+@media (max-width: 768px) {
+  .filter-item {
+    flex: 1 1 45%;
+    /* dos por fila aprox. en tablets/móviles */
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-item {
+    flex: 1 1 100%;
+    /* uno por fila en celulares pequeños */
+  }
+}
+
+/* --- Solo los tres de arriba --- */
+.menu-top {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.btn-square {
+  width: 180px;
+  height: 140px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1316;
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.btn-square:hover {
+  border-color: #2b343b;
+}
+
+.btn-square.primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+/* --- Divisor visual sin el punto --- */
+.divider {
+  width: 100%;
+  max-width: 420px;
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0 4px;
+}
+
+/* --- Botones inferiores conservan su estilo --- */
+.menu>.btn {
+  width: auto;
+  height: auto;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 12px;
+  background: #0f1316;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.menu>.btn:hover {
+  border-color: #2b343b;
+}
+
+.menu>.btn.primary {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+}
+
+/* === Modal reutilizable === */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+
+.modal-card {
+  width: min(480px, 92vw);
+  background: #121212;
+  /* dark mode friendly */
+  color: #eaeaea;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  font-weight: 600;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.modal-body {
+  padding: 16px 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.modal-body label {
+  font-size: .9rem;
+  opacity: .9;
+}
+
+.modal-body input,
+.modal-body textarea,
+.modal-body select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #eaeaea;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.modal-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 0;
+  cursor: pointer;
+}
+
+.modal-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.modal-btn.ghost {
+  background: transparent;
+  color: #eaeaea;
+  border: 1px solid #333;
+}
+
+.reports-actions{
+  padding-bottom: 15px;
+}

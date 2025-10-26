@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Sukhavati</title>
+    <link rel="stylesheet" href="./styles/style.css" />
+    <link rel="stylesheet" href="./styles/auth.css" />
+</head>
+
+<body>
+    <main class="container-auth">
+        <section class="auth-card">
+            <h1 class="auth-header">Acceso</h1>
+
+            <!-- Enlaces de modo -->
+            <div class="auth-links">
+                <span id="link-new-register" class="section-link">¿Nuevo? Solicita acceso</span> |
+                <span id="link-user-login" class="section-link">Ya tengo cuenta</span>
+            </div>
+
+            <!-- Sección Solicitar registro -->
+            <div id="section-new-register" class="form-section">
+                <div class="form-row">
+                    <label>NOMBRE
+                        <input id="req-name" type="text" placeholder="Tu nombre" />
+                    </label>
+                    <label>CORREO
+                        <input id="req-email" type="email" placeholder="tucorreo@dominio.com" />
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary" id="btn-request">Enviar enlace</button>
+                </div>
+                <div class="msg muted" id="req-msg"></div>
+            </div>
+
+            <!-- Sección Login -->
+            <div id="section-user-login" class="form-section">
+                <div class="form-row">
+                    <label>Correo
+                        <input id="log-email" type="email" placeholder="tucorreo@dominio.com" />
+                    </label>
+                    <label>Contraseña
+                        <input id="log-pass" type="password" placeholder="••••••••" />
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary" id="btn-login">Entrar</button>
+                    <button class="btn" id="btn-reset-ask">Olvidé mi contraseña</button>
+                </div>
+                <div class="msg muted" id="log-msg"></div>
+            </div>
+
+            <!-- Establecer contraseña (se muestra si viene ?set=TOKEN) -->
+            <div id="section-set" class="form-section">
+                <div class="notice">Estás activando tu cuenta. Define tu contraseña.</div>
+                <div class="form-row">
+                    <label>Nueva contraseña
+                        <input id="set-pass" type="password" placeholder="••••••••" />
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary" id="btn-set">Guardar</button>
+                </div>
+                <div class="msg muted" id="set-msg"></div>
+            </div>
+            
+            <!-- Restablecer contraseña (se muestra si viene ?reset=TOKEN) -->
+            <div id="section-reset" class="form-section">
+                <div class="notice">Restablece tu contraseña.</div>
+                <div class="form-row">
+                    <label>Nueva contraseña
+                        <input id="reset-pass" type="password" placeholder="••••••••" />
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary" id="btn-reset">Restablecer</button>
+                </div>
+                <div class="msg muted" id="reset-msg"></div>
+            </div>
+
+            <div class="footer-return">
+                <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./scripts/login.js"></script>
+</body>
+
+</html>

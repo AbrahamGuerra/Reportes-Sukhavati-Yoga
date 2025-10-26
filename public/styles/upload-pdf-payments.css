@@ -1,0 +1,108 @@
+/* ==== CARGA PDF – AJUSTE FINO ==== */
+
+/* 0) Escala base más compacta dentro de la página */
+.page-wrap {
+    /* reduce todo ~12–15% sin tocar otras pantallas */
+    font-size: 14px;
+}
+
+/* 1) filters: grid + tamaño de texto y altura más pequeños */
+.range-card.filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    gap: 12px 14px;
+    padding: 16px;
+}
+
+@media (max-width: 1024px) {
+    .range-card.filters {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .range-card.filters {
+        grid-template-columns: 1fr;
+    }
+}
+
+.range-card.filters label {
+    font-size: .72rem;
+    /* label más pequeño */
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--rng-sub, #94a3b8);
+}
+
+.range-card.filters input[type="text"],
+.range-card.filters input[type="search"],
+.range-card.filters input[type="date"] {
+    margin-top: 6px;
+    height: 36px;
+    /* antes 42px */
+    border-radius: 8px;
+    border: 1px solid var(--rng-brd, #1e293b);
+    background: #0b1224;
+    color: var(--rng-txt, #e2e8f0);
+    font-size: .9rem;
+    /* texto del input más pequeño */
+    padding: 0 .65rem;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.range-card.filters input::placeholder {
+    color: #7c8aa3;
+}
+
+/* 2) Botones: altura compacta y consistencia */
+.report-buttons {
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn {
+    height: 36px;
+    line-height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+}
+
+/* ====== CARGA PDF – REFINES UI ====== */
+
+/* 1) Inputs y labels más agradables */
+.filters .row {
+    gap: 10px;
+}
+
+.filters .filter-item label,
+.filters label {
+    font-size: .78rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.filters .filter-item input[type="text"],
+.filters .filter-item input[type="search"],
+.filters .filter-item input[type="date"],
+.filters .filter-item select {
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--rng-brd, #1e293b);
+    background: #0f1316;
+    color: var(--rng-txt, #e2e8f0);
+    font-size: .95rem;
+    padding: 0 .7rem;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.filters .filter-item input::placeholder {
+    color: #7c8aa3;
+}
+
+.filters .filter-item input:focus,
+.filters .filter-item select:focus {
+    border-color: color-mix(in oklab, var(--rng-accent, #5b8dff) 60%, #ffffff 0%);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--rng-accent, #5b8dff) 30%, transparent 70%);
+}
