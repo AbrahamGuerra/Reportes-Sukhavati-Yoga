@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carga de PDF de payments | Sukhavati</title>
+    <link rel="stylesheet" href="./styles/style.css" />
+    <link rel="stylesheet" href="./styles/payment-reports.css" />
+    <link rel="stylesheet" href="./styles/upload-pdf-payments.css" />
+</head>
+
+<body>
+    <main class="container">
+        <div class="card">
+            <h1>Cargar PDF de payments</h1>
+            <p class="muted">Filtra, sube el PDF y guarda.
+            </p>
+
+            <section id="filters" class="filters">
+                <div class="row">
+                    <label class="filter-item">ID CARGO
+                        <input id="filtro-id-charge" type="text" placeholder="ej. ch_123..." />
+                    </label>
+
+                    <label class="filter-item">ID TRANSACCIÓN
+                        <input id="filter-id-transaction" type="text" />
+                    </label>
+                    
+                    <label class="filter-item">ID SUSCRIPCIÓN
+                        <input id="filter-id-subscription" type="text" />
+                    </label>
+                    
+                    <label class="filter-item">SOCIO
+                        <input id="filtro-partner" type="text" placeholder="Nombre o ID socio" />
+                    </label>
+                    
+                    <label class="filter-item">NOTAS
+                        <input id="filter-notes" type="text" placeholder="Texto libre" />
+                    </label>
+
+                    <label class="filter-item">PRODUCTO
+                        <select id="filter-product">
+                            <option value="">Todos</option>
+                        </select>
+                    </label>
+
+                    <div id="filters-range" class="range-card">
+                        <div class="date-field">
+                            <label for="filter-start-date">FECHA INICIO</label>
+                            <input type="date" id="filter-start-date" />
+                        </div>
+                        <div class="date-field">
+                            <label for="filter-end-date">FECHA FIN</label>
+                            <input type="date" id="filter-end-date" />
+                        </div>
+                        <div class="range-hint">
+                            Selecciona un periodo.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="reports-actions">
+                <button id="btn-search" class="btn">Buscar</button>
+                <button id="btn-clean" class="btn">Limpiar</button>
+                <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
+            </div>
+
+        <div class="table-area">
+            <div class="table-scroll">
+                <table id="table-payment-reports">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Socio</th>
+                            <th>Producto</th>
+                            <th>Método</th>
+                            <th>Total</th>
+                            <th>Id cargo</th>
+                            <th>Id transacción</th>
+                            <th>Id suscripción</th>
+                            <th>Evidencia (URL)</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="./scripts/guard.js"></script>
+    <script type="module" src="./scripts/upload-pdf-payments.js"></script>
+</body>
+
+</html>

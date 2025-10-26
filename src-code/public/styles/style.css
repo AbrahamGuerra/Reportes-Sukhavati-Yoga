@@ -1,0 +1,383 @@
+:root {
+  --bg: #0b0d0f;
+  --border: #20262b;
+  --card: #14181b;
+  --muted: #9aa4ad;
+  --page-max: 1200px;
+  --primary: #5b9cff;
+  --radius: 16px;
+  --text: #e6edf3;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial;
+  margin: 0;
+}
+
+.container {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  margin: 0 auto;
+  max-width: var(--page-max);
+  padding: 24px 28px;
+  width: 100%;
+}
+
+.table-area {
+  width: 100%;
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 8px 0 18px;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+label {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+select {
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 12px;
+}
+
+.file-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.file-name {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.btn,
+.btn-outline,
+.btn.primary {
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+.btn:hover,
+.btn-outline:hover {
+  border-color: #2b343b;
+}
+
+.btn.primary {
+  background: var(--primary);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.05);
+}
+
+.result {
+  background: #0a0e11;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 14px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* === Menú principal === */
+.menu {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100vh;
+  justify-content: center;
+}
+
+.menu h1 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.menu .btn {
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 15px 30px;
+}
+
+/* === Filtros === */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.filters .row {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-item {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.filter-item select,
+.filter-item input[type="date"] {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .filter-item {
+    flex: 1 1 45%;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-item {
+    flex: 1 1 100%;
+  }
+}
+
+/* --- Menú superior --- */
+.menu-top {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.btn-square {
+  align-items: center;
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 700;
+  height: 140px;
+  justify-content: center;
+  width: 180px;
+}
+
+.btn-square.primary {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+}
+
+/* --- Divisor --- */
+.divider {
+  background: var(--border);
+  height: 1px;
+  margin: 12px 0 4px;
+  max-width: 420px;
+  width: 100%;
+}
+
+/* --- Botones inferiores --- */
+.menu>.btn {
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  height: auto;
+  padding: 12px 20px;
+  width: auto;
+}
+
+.menu>.btn:hover {
+  border-color: #2b343b;
+}
+
+.menu>.btn.primary {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+}
+
+/* === Modal === */
+.modal-backdrop {
+  background: rgba(0, 0, 0, .55);
+  display: grid;
+  inset: 0;
+  place-items: center;
+  position: fixed;
+  z-index: 9999;
+}
+
+.modal-card {
+  background: #121212;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  color: #eaeaea;
+  font-family: inherit;
+  overflow: hidden;
+  width: min(480px, 92vw);
+}
+
+.modal-header {
+  border-bottom: 1px solid #2a2a2a;
+  font-weight: 600;
+  padding: 16px 20px;
+}
+
+.modal-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.modal-body label {
+  font-size: .9rem;
+  opacity: .9;
+}
+
+.modal-body input,
+.modal-body textarea,
+.modal-body select {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: #eaeaea;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.modal-footer {
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+}
+
+.modal-btn {
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+.modal-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.modal-btn.ghost {
+  background: transparent;
+  border: 1px solid #333;
+  color: #eaeaea;
+}
+
+.reports-actions {
+  padding-bottom: 15px;
+}
+
+/* --- Aviso para editores --- */
+.warning {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 3px solid #ffd166;
+  border-radius: 6px;
+  color: #ffd166;
+  display: flex;
+  font-size: 0.92rem;
+  gap: 8px;
+  margin: 12px 0 18px 0;
+  padding: 10px 14px;
+}
+
+.warning svg {
+  fill: #ffd166;
+  flex-shrink: 0;
+  height: 18px;
+  width: 18px;
+}
+
+/* --- Botones activos --- */
+.btn-square.active {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  transform: scale(1.05);
+  transition: all 0.15s ease;
+}
+
+.btn-square:not(.active):hover {
+  border-color: #2b343b;
+}
+
+.btn-square:hover {
+  background: var(--primary);
+  border: none;
+  border-color: #2b343b;
+  color: #fff;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reportes de pagos | Sukhavati</title>
+    <link rel="stylesheet" href="./styles/style.css" />
+    <link rel="stylesheet" href="./styles/payment-reports.css" />
+</head>
+
+<body>
+    <main class="container">
+        <div class="card payment-reports-container">
+            <h1>Reportes de pagos</h1>
+            <p class="muted">Consulta los pagos agrupados por periodo y forma de pago.</p>
+            <nav id="report-nav">
+                <button id="btn-consecutive" class="btn primary" data-mode="consecutive">Consecutivo</button>
+                <button id="btn-monthly" class="btn" data-mode="monthly">Mensual</button>
+                <button id="btn-weekly" class="btn" data-mode="weekly">Semanal</button>
+                <button id="btn-fortnightly" class="btn" data-mode="fortnightly">Quincenal</button>
+                <button id="btn-range" class="btn" data-mode="range">Rango de fechas</button>
+            </nav>
+            <div class="page-wrap">
+                <section id="filters" class="filters">
+                    <div class="row">
+                        <label class="filter-item">SEGMENTO
+                            <select id="filter-segment">
+                                <option value="">Todos</option>
+                                <option value="SUKHAVATI">SUKHAVATI</option>
+                                <option value="BIENESTAR">BIENESTAR</option>
+                            </select>
+                        </label>
+                        <label class="filter-item">ESTADO
+                            <select id="filter-status">
+                                <option value="">Todos</option>
+                            </select>
+                        </label>
+                        <label class="filter-item">AÑO
+                            <select id="filter-year"></select>
+                        </label>
+                        <label class="filter-item">MES
+                            <select id="filter-monthly"></select>
+                        </label>
+                        <label class="filter-item">QUINCENA
+                            <select id="filter-fortnightly">
+                                <option value="">Todas</option>
+                                <option value="1">Q1</option>
+                                <option value="2">Q2</option>
+                            </select>
+                        </label>
+                        <label class="filter-item">SEMANA (ISO)
+                            <select id="filter-weekly"></select>
+                        </label>
+                        <label class="filter-item">PRODUCTO
+                            <select id="filter-product">
+                                <option value="">Todos</option>
+                            </select>
+                        </label>
+                    </div>
+                
+                    <div id="filters-range" class="hidden range-card">
+                        <div class="date-field">
+                            <label for="filter-start-date">FECHA INICIO</label>
+                            <input type="date" id="filter-start-date" />
+                        </div>
+                        <div class="date-field">
+                            <label for="filter-end-date">FECHA FIN</label>
+                            <input type="date" id="filter-end-date" />
+                        </div>
+                        <div class="range-hint">
+                            Selecciona un periodo.
+                        </div>
+                    </div>
+                </section>
+                
+                <div class="reports-actions">
+                    <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
+                </div>
+
+                <div class="table-area">
+                    <div class="table-scroll">
+                        <table id="table-payment-reports">
+                            <thead>
+                                <tr id="thead-group"></tr>
+                                <tr id="thead-row"></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div id="pager" class="pager">
+                        <button id="pg-first" class="btn" aria-label="Primera">«</button>
+                        <button id="pg-prev" class="btn" aria-label="Anterior">‹</button>
+                        <span id="pg-info" class="pager-info">Página 1 de 1 (0 filas)</span>
+                        <button id="pg-next" class="btn" aria-label="Siguiente">›</button>
+                        <button id="pg-last" class="btn" aria-label="Última">»</button>
+                        <label class="pager-size">
+                            Filas:
+                            <select id="pg-size">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
+                        <button id="btn-export" class="btn export">
+                            📊 Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="./scripts/guard.js"></script>
+    <script type="module" src="./scripts/payment-reports.js"></script>
+</body>
+</html>
