@@ -6,11 +6,12 @@ import { upsertProductsFromXlsx } from '../mappers/products.js'
 import { upsertSubscriptionsFromXlsx } from '../mappers/subscriptions.js'
 import { upsertActivitiesFromXlsx } from '../mappers/activities.js'
 import { mergeAndUpsertpayments } from '../mappers/payments.js'
+import { authRequired } from '../auth/middleware.js'
 
 const router = express.Router()
 const uploadAny = multer({ storage: multer.memoryStorage() }).any()
 
-router.post('/upload', uploadAny, async (req, res) => {
+router.post('/upload', authRequired, uploadAny, async (req, res) => {
   const badRequest = (msg) => res.status(400).json({ ok: false, error: msg });
   const serverError = (err, scope = 'upload') => {
     console.error(`${scope} error:`, err);
@@ -20,7 +21,8 @@ router.post('/upload', uploadAny, async (req, res) => {
   try {
     const schema = String(req.body.schema || '').trim().toLowerCase();
     const table  = String(req.body.table || '').trim().toLowerCase();
-
+    const role   = String(req.user?.role || '').trim().toLowerCase();
+    
     if (!schema || !table) return badRequest('Debes enviar schema y table');
     if (!req.files || !req.files.length) return badRequest('No se recibieron archivos');
 
@@ -54,14 +56,14 @@ router.post('/upload', uploadAny, async (req, res) => {
       activities: {
         filesRequired: 1,
         run: async (files) =>
-          upsertActivitiesFromXlsx(files[0].buffer, { sheet: 'Export', schema }),
+          upsertActivitiesFromXlsx(files[0].buffer, { sheet: 'Export', schema, role }),
         successMessage: 'Actividades actualizadas correctamente',
       },
       payments: {
         filesRequired: 2,
         run: async (files) => {
           const [fileA, fileB] = files;
-          return mergeAndUpsertpayments(fileA, fileB, { schema });
+          return mergeAndUpsertpayments(fileA, fileB, { schema, role });
         },
         successMessage: 'Pagos actualizados correctamente',
       },

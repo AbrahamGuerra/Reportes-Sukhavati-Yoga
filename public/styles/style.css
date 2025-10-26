@@ -138,10 +138,6 @@ select { background:#0f1316; color: var(--text); border:1px solid var(--border);
   cursor: pointer;
 }
 
-.btn-square:hover {
-  border-color: #2b343b;
-}
-
 .btn-square.primary {
   background: var(--primary);
   color: #fff;
@@ -258,4 +254,46 @@ select { background:#0f1316; color: var(--text); border:1px solid var(--border);
 
 .reports-actions{
   padding-bottom: 15px;
+}
+
+/* Aviso solo para editores */
+.warning {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffd166;
+  border-left: 3px solid #ffd166;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 12px 0 18px 0;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.warning svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  fill: #ffd166;
+}
+
+.btn-square.active {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  transform: scale(1.05);
+  transition: all 0.15s ease;
+}
+
+.btn-square:not(.active):hover {
+  border-color: #2b343b;
+}
+
+.btn-square:hover {
+  background: var(--primary);
+  border-color: #2b343b;
+  color: #fff;
+  border: none;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
 }

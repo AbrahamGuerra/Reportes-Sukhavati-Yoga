@@ -21,6 +21,7 @@ app.use(express.static('public'))
 // API
 app.use('/api/information', uploadInformation)
 app.use('/api/paymentreports', paymentReports)
+// app.use(authRequired) 
 app.use('/api/bucket', bucket)
 app.use('/api/auth', authRoutes)
 

@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import XLSX from 'xlsx'
 import { query } from '../DB/db.js'
+import { filterLastNDays } from '../utils/utils.js'
 
 dayjs.extend(customParseFormat)
 const DATE_PATTERNS = [
@@ -122,7 +123,7 @@ export async function upsertActivitiesRows(rows, { schema='reportes_sukhavati', 
   return { inserted, updated }
 }
 
-export async function upsertActivitiesFromXlsx(xlsxPathOrBuffer, { sheet=null, schema='reportes_sukhavati' } = {}) {
+export async function upsertActivitiesFromXlsx(xlsxPathOrBuffer, { sheet=null, schema='reportes_sukhavati', role='' } = {}) {
   const wb = typeof xlsxPathOrBuffer === 'string'
     ? XLSX.readFile(xlsxPathOrBuffer, { cellDates: true })
     : XLSX.read(xlsxPathOrBuffer, { type: 'buffer', cellDates: true })
@@ -156,5 +157,15 @@ export async function upsertActivitiesFromXlsx(xlsxPathOrBuffer, { sheet=null, s
       extraHeaders
     }
   }
-  return upsertActivitiesRows(rawRows, { schema, table: 'actividades' })
+
+  //Si el rol es diferente de ADMIN filtrar solo pagos de los últimos 7 días 
+  let rowsToUpsert = rawRows
+  if (role !== 'admin') {
+    rowsToUpsert = filterLastNDays(rawRows, ['Fecha evento','Fecha registro'], 7)
+    if (!rowsToUpsert.length) {
+      return { ok: false, error: 'No hay pagos dentro de los últimos 7 días.' }
+    }
+  }
+  
+  return upsertActivitiesRows(rowsToUpsert, { schema, table: 'actividades' })
 }

@@ -1,12 +1,21 @@
-export function normalizeIdentifier(name) {
-  let s = String(name ?? '').trim().toLowerCase();
-  s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); // remove accents
-  s = s.replace(/[^\w]+/g, '_'); // non-word to underscore
-  s = s.replace(/_+/g, '_').replace(/^_|_$/g, '');
-  if (/^\d/.test(s)) s = `col_${s}`;
-  const reserved = new Set(['user','order','select','where','group','from','to','as','table','schema']);
-  if (reserved.has(s)) s = `${s}_col`;
-  return s || 'col_unnamed';
+export function filterLastNDays(rows, fieldNames = [], days = 7) {
+  if (!Array.isArray(rows) || !rows.length) return []
+
+  const now = new Date()
+  const cutoff = new Date(now)
+  cutoff.setDate(now.getDate() - days)
+
+  return rows.filter(r => {
+    for (const f of fieldNames) {
+      const val = r[f] ?? r[f.toLowerCase()] ?? r[f.toUpperCase()]
+      if (!val) continue
+      const d = new Date(val)
+      if (!isNaN(d)) {
+        return d >= cutoff && d <= now
+      }
+    }
+    return false
+  })
 }
 
 export function normalizeIdentifier(name) {

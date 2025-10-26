@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import crypto from 'crypto'
 import { query } from '../DB/db.js'
+import { filterLastNDays } from '../utils/utils.js'
 
 dayjs.extend(customParseFormat)
 
@@ -401,7 +402,7 @@ async function upsertPayments(rows, { schema='reportes_sukhavati', table='pagos'
   return { inserted, updated }
 }
 
-export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_sukhavati' } = {}) {
+export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_sukhavati', role='' } = {}) {
   const sheet1 = readFirstSheet(file1)
   const sheet2 = readFirstSheet(file2)
 
@@ -445,6 +446,16 @@ export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_su
     seen.add(sig); final.push(row)
   }
 
-  const res = await upsertPayments(final, { schema })
+  //Si el role es diferente de ADMIN filtrar solo pagos de los últimos 7 días 
+  let rowsToUpsert = final
+
+  if (role !== 'admin') {
+    rowsToUpsert = filterLastNDays(final, ['fecha_de_registro'], 7)
+    if (!rowsToUpsert.length) {
+      return { ok: false, error: 'No hay pagos dentro de los últimos 7 días.' }
+    }
+  }
+
+  const res = await upsertPayments(rowsToUpsert, { schema })
   return { ...res, merged: merged.length, missesTotal: misses.length, misses: misses }
 }

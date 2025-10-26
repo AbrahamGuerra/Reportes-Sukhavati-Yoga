@@ -13,7 +13,6 @@
         <div class="card">
             <div class="header">
                 <h1>Subir información</h1>
-                <button class="btn-outline" id="btn-browse">Subir Excel</button>
                 <input type="file" id="file" accept=".xlsx" hidden />
             </div>
 
@@ -34,6 +33,16 @@
                 <div class="file-row">
                     <button type="button" class="btn" id="btn-choose">Seleccionar archivo</button>
                     <span id="file-name" class="file-name">Ningún archivo seleccionado</span>
+                </div>
+
+                <div id="editor-warning" class="warning" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.75 15h-1.5v-1.5h1.5Zm0-3h-1.5V7h1.5Z" />
+                    </svg>
+                    <span>
+                        Los usuarios con este rol solo pueden cargar información de <b>Pagos</b> y <b>Actividades</b>
+                        correspondientes a los últimos <b>7 días</b>.
+                    </span>
                 </div>
 
                 <label>Unidad de negocio</label>

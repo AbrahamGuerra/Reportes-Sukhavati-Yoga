@@ -554,7 +554,7 @@ export function requestReset({ email }) {
 export function resetPassword({ token, password }) {
   return postForm('/api/auth/reset-password', { token, password })
 }
-export async function requestRoleChange({ rol }) {
+export async function requestRoleChange({ role }) {
   const token = getToken()
   const res = await fetch('/api/auth/request-role-change', {
     method: 'POST',
@@ -562,7 +562,7 @@ export async function requestRoleChange({ rol }) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ rol }),
+    body: JSON.stringify({ role }),
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.error || json.code || res.statusText)

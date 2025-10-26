@@ -10,10 +10,10 @@ export async function requireAuth(allowedRols = []) {
 
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
-    const { email, rol } = payload
+    const { email, role } = payload
 
     // Verifica roles permitidos
-    if (allowedRols.length > 0 && !allowedRols.includes(rol)) {
+    if (allowedRols.length > 0 && !allowedRols.includes(role)) {
       await showPermissionDeniedModal()
       return null
     }

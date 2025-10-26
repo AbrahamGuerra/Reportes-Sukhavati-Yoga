@@ -2,7 +2,12 @@ import { requireAuth } from './guard.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor'])
-  if (!user) return 
+  if (!user) return
+  
+  const warningBox = document.getElementById('editor-warning')
+  if (String(user.role || '').trim().toLowerCase() !== 'admin') {
+    warningBox.style.display = 'block'
+  }
 })
 
 const fileInput    = document.getElementById('file');
@@ -84,7 +89,14 @@ form?.addEventListener('submit', async (e) => {
 
   result.textContent = 'Subiendo y procesando...';
   try {
-    const resp = await fetch('/api/information/upload', { method: 'POST', body: fd });
+    const token = localStorage.getItem('auth_token')
+    const resp = await fetch('/api/information/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: fd
+    })
     const json = await resp.json();
     result.textContent = JSON.stringify(json, null, 2);
   } catch (err) {

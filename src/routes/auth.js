@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
 const TOKEN_TTL_HOURS = 24
 
 function signUser(user) {
-  const payload = { id: user.id, email: user.email, rol: user.codigo_rol }
+  const payload = { id: user.id, email: user.email, role: user.code_role }
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
 }
 
@@ -50,7 +50,7 @@ router.post('/request-register', async (req, res) => {
 
     // Buscar rol por código (por ejemplo 'views')
     const { rows: roleRows } = await query(
-      `SELECT id FROM reportes_sukhavati.roles WHERE codigo = $1`,
+      `SELECT id FROM reportes_sukhavati.roles WHERE code = $1`,
       ['views']
     )
     if (!roleRows.length) {
@@ -60,7 +60,7 @@ router.post('/request-register', async (req, res) => {
 
     // Crear usuario preliminar (email_verified=false, password_hash NULL)
     const { rows: newUserRows } = await query(
-      `INSERT INTO reportes_sukhavati.users (name, email, password_hash, id_rol, email_verified, active)
+      `INSERT INTO reportes_sukhavati.users (name, email, password_hash, id_role, email_verified, active)
        VALUES ($1, $2, NULL, $3, false, true)
        RETURNING id`,
       [name || null, cleanEmail, rolId]
@@ -105,10 +105,10 @@ router.post('/set-password', async (req,res) => {
     if (!token || !password) return res.status(400).json({ ok:false, error:'TOKEN_AND_PASSWORD_REQUIRED' })
 
     const { rows } = await query(
-      `SELECT t.id_user, u.email, r.codigo AS codigo_rol, t.expires_in, t.used_in
+      `SELECT t.id_user, u.email, r.code AS code_role, t.expires_in, t.used_in
        FROM reportes_sukhavati.auth_tokens_register t
        JOIN reportes_sukhavati.users u ON u.id=t.id_user
-       JOIN reportes_sukhavati.roles r ON r.id=u.id_rol
+       JOIN reportes_sukhavati.roles r ON r.id=u.id_role
        WHERE t.token=$1 LIMIT 1`,
       [token]
     )
@@ -127,7 +127,7 @@ router.post('/set-password', async (req,res) => {
     await query(`UPDATE reportes_sukhavati.auth_tokens_register SET used_in=now() WHERE token=$1`, [token])
     await query('COMMIT')
 
-    const jwtToken = signUser({ id: tk.id_user, email: tk.email, codigo_rol: tk.codigo_rol })
+    const jwtToken = signUser({ id: tk.id_user, email: tk.email, code_role: tk.code_role })
     return res.json({ ok:true, token: jwtToken })
   } catch (err) {
     await query('ROLLBACK').catch(()=>{})
@@ -145,9 +145,9 @@ router.post('/login', async (req,res) => {
     if (!email || !password) return res.status(400).json({ ok:false, error:'EMAIL_AND_PASSWORD_REQUIRED' })
 
     const { rows } = await query(
-      `SELECT u.id, u.email, u.password_hash, r.codigo AS codigo_rol
+      `SELECT u.id, u.email, u.password_hash, r.code AS code_role
        FROM reportes_sukhavati.users u
-       JOIN reportes_sukhavati.roles r ON r.id=u.id_rol
+       JOIN reportes_sukhavati.roles r ON r.id=u.id_role
        WHERE u.email=LOWER($1) AND u.active=true LIMIT 1`,
       [email]
     )
@@ -169,30 +169,61 @@ router.post('/login', async (req,res) => {
  */
 router.post('/request-reset', async (req,res) => {
   try {
-    const { email } = req.body
-    if (!email) return res.status(400).json({ ok:false, error:'EMAIL_REQUIRED' })
-    const { rows } = await query(
-      `SELECT id FROM reportes_sukhavati.users WHERE email=LOWER($1) AND active=true LIMIT 1`,
-      [email]
-    )
-    if (!rows.length) return res.json({ ok:true }) // no revelar existencia
+    const { email } = req.body || {}
+    const cleanEmail = String(email || '').trim().toLowerCase()
+    if (!cleanEmail) return res.status(400).json({ ok:false, error:'EMAIL_REQUIRED' })
 
-    const userId = rows[0].id
-    await query(`UPDATE reportes_sukhavati.auth_tokens_reset SET used_in=now() WHERE id_user=$1 AND used_in IS NULL`, [userId])
-    const expires = new Date(Date.now() + TOKEN_TTL_HOURS*3600*1000).toISOString()
+    // Buscar usuario activo
+    const { rows: urows } = await query(
+      `SELECT id FROM reportes_sukhavati.users WHERE email = LOWER($1) AND active = true LIMIT 1`,
+      [cleanEmail]
+    )
+
+    // No reveles existencia
+    if (!urows.length) return res.json({ ok:true })
+
+    const userId = urows[0].id
+
+    // Invalidar tokens previos sin usar
+    await query(
+      `UPDATE reportes_sukhavati.auth_tokens_reset
+         SET used_in = now()
+       WHERE id_user = $1 AND used_in IS NULL`,
+      [userId]
+    )
+
+    // Crear token con vencimiento (24h)
+    const expiresAt = new Date(Date.now() + TOKEN_TTL_HOURS * 3600 * 1000)
     const { rows: trows } = await query(
-      `INSERT INTO reportes_sukhavati.auth_tokens_reset (id_user, expires_in) VALUES ($1,$2) RETURNING token`,
-      [userId, expires]
+      `INSERT INTO reportes_sukhavati.auth_tokens_reset (id_user, expires_in)
+       VALUES ($1, $2)
+       RETURNING token`,
+      [userId, expiresAt]
     )
     const token = trows[0].token
-    const base = process.env.PUBLIC_BASE_URL || 'http://localhost:3000'
-    const url = `${base}/login.html?reset=${token}`
-    return res.json({ ok:true, url })
+
+    // URL hacia el formulario de reset (nuevo reset.html)
+    const base = process.env.APP_BASE_URL || process.env.PUBLIC_BASE_URL || 'http://localhost:3000'
+    const url  = `${base}/reset.html?token=${token}`
+
+    // Enviar correo
+    const html = `
+      <h2>Restablecer contraseña</h2>
+      <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+      <p><a href="${url}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#3b82f6;color:#fff;text-decoration:none">Crear nueva contraseña</a></p>
+      <p>Si el botón no funciona, copia y pega esta URL en tu navegador:</p>
+      <p><code>${url}</code></p>
+      <p>Este enlace expira en ${TOKEN_TTL_HOURS} horas.</p>
+    `
+    await sendMail({ to: cleanEmail, subject: 'Restablece tu contraseña', html })
+
+    return res.json({ ok: true, message: 'REQUEST_RESET_PASSWORD' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok:false, error: err.message })
   }
 })
+
 
 /**
  * 5) Reset de contraseña con token
@@ -202,10 +233,10 @@ router.post('/reset-password', async (req,res) => {
     const { token, password } = req.body
     if (!token || !password) return res.status(400).json({ ok:false, error:'TOKEN_AND_PASSWORD_REQUIRED' })
     const { rows } = await query(
-      `SELECT t.id_user, u.email, r.codigo AS codigo_rol, t.expires_in, t.used_in
+      `SELECT t.id_user, u.email, r.code AS code_role, t.expires_in, t.used_in
        FROM reportes_sukhavati.auth_tokens_reset t
        JOIN reportes_sukhavati.users u ON u.id=t.id_user
-       JOIN reportes_sukhavati.roles r ON r.id=u.id_rol
+       JOIN reportes_sukhavati.roles r ON r.id=u.id_role
        WHERE t.token=$1 LIMIT 1`,
       [token]
     )
@@ -220,7 +251,7 @@ router.post('/reset-password', async (req,res) => {
     await query(`UPDATE reportes_sukhavati.auth_tokens_reset SET used_in=now() WHERE token=$1`, [token])
     await query('COMMIT')
 
-    const jwtToken = signUser({ id: tk.id_user, email: tk.email, codigo_rol: tk.codigo_rol })
+    const jwtToken = signUser({ id: tk.id_user, email: tk.email, code_role: tk.code_role })
     return res.json({ ok:true, token: jwtToken })
   } catch (err) {
     await query('ROLLBACK').catch(()=>{})
@@ -239,7 +270,7 @@ router.post('/request-role-change', authRequired, async (req, res) => {
     if (!rol) return res.status(400).json({ ok:false, error:'ROL_REQUIRED' })
 
     const { rows: roleRows } = await query(
-      `SELECT id FROM reportes_sukhavati.roles WHERE codigo = $1`,
+      `SELECT id FROM reportes_sukhavati.roles WHERE code = $1`,
       [rol]
     )
     if (!roleRows.length) {
@@ -293,7 +324,7 @@ router.post('/resolve-role-change', authRequired, async (req,res) => {
     if (!id) return res.status(400).json({ ok:false, error:'ID_REQUIRED' })
 
     const { rows } = await query(
-      `SELECT scr.id_user, scr.id_requested_role, r.codigo AS rol_codigo
+      `SELECT scr.id_user, scr.id_requested_role, r.code AS code_role
        FROM reportes_sukhavati.requests_change_role scr
        JOIN reportes_sukhavati.roles r ON r.id = scr.id_requested_role
        WHERE scr.id=$1 AND scr.status='pendiente'`,
@@ -303,7 +334,7 @@ router.post('/resolve-role-change', authRequired, async (req,res) => {
 
     await query('BEGIN')
     if (approve) {
-      await query(`UPDATE reportes_sukhavati.users SET id_rol=$1, updated_in=now() WHERE id=$2`, [rows[0].id_requested_role, rows[0].id_user])
+      await query(`UPDATE reportes_sukhavati.users SET id_role=$1, updated_in=now() WHERE id=$2`, [rows[0].id_requested_role, rows[0].id_user])
       await query(`UPDATE reportes_sukhavati.requests_change_role SET status='aprobada', solved_in=now(), solved_by_id=$1 WHERE id=$2`, [req.user.id, id])
     } else {
       await query(`UPDATE reportes_sukhavati.requests_change_role SET status='rechazada', solved_in=now(), solved_by_id=$1 WHERE id=$2`, [req.user.id, id])
@@ -320,7 +351,7 @@ router.post('/resolve-role-change', authRequired, async (req,res) => {
 /**
  * 8) Registro completado
  */
-router.post('/registercomplete', async (req, res) => {
+router.post('/register-complete', async (req, res) => {
   try {
     const { token, password } = req.body || {}
     if (!token || !password) {

@@ -13,7 +13,7 @@ export const mailer = nodemailer.createTransport({
 export async function sendMail({ to, subject, html }) {
   try {
     const info = await mailer.sendMail({
-      from: `"Sukhavati Yoga" <${process.env.SMTP_USER}>`,
+      from: `"Reportes Sukhavati Yoga" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
