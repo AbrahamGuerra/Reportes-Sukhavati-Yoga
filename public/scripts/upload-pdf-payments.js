@@ -65,19 +65,23 @@ async function searchpayments(filters) {
   return await fetchJSON(`/api/bucket/payments${q}`)
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, { socio, id_cargo, id_transaccion }) {
   const fd = new FormData()
   fd.append('file', file)
+  if (socio) fd.append('socio', socio)
+  if (id_cargo) fd.append('id_cargo', id_cargo)
+  if (id_transaccion) fd.append('id_transaccion', id_transaccion)
 
   const res = await fetch('/api/bucket/upload', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getToken?.() || ''}`,
-    },
+    headers: { Authorization: `Bearer ${getToken?.() || ''}` },
     body: fd,
   })
-  if (!res.ok) throw new Error('Error subiendo PDF')
-  return res.json() // { url, key }
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j.error || `UPLOAD_ERROR_${res.status}`)
+  }
+  return res.json()
 }
 
 async function updateEvidencia(idTransaccion, url) {
@@ -139,7 +143,11 @@ function render(rows) {
           return
         }
 
-        const { url } = await uploadFile(file)
+        const { url } = await uploadFile(file, {
+          socio: r.socio,
+          id_cargo: r.id_cargo,
+          id_transaccion: r.id_transaccion,
+        })
         await updateEvidencia(r.id_transaccion, url)
 
         tr.cells[8].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver PDF</a>`

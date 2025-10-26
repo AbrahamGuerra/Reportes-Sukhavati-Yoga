@@ -106,7 +106,9 @@ input::placeholder {
 
 .form-actions {
     display: flex;
-    gap: 0.75rem;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
     margin-top: 1rem;
 }
 
@@ -129,4 +131,14 @@ input::placeholder {
     font-size: .95rem;
     margin-bottom: 1rem;
     padding: .75rem;
+}
+
+@media (max-width: 600px) {
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
 }

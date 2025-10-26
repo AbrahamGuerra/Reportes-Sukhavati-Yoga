@@ -20,15 +20,22 @@ const sanitize = (s) =>
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-const buildUserPrefix = (user) => {
-  const idOrEmail = user?.id || user?.email || 'anon'
-  const u = sanitize(idOrEmail)
+const sanitizeFilename = (s) =>
+  String(s || '')
+    .replace(/\.pdf$/i, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+const buildPagosPrefix = (socio) => {
+  const s = sanitize(socio || '')
+  if (!s) throw new Error('SOCIO_REQUIRED')
   const now = new Date()
   const yyyy = now.getFullYear()
   const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const base = (process.env.S3_PREFIX || '').replace(/\/+$/, '')
-  // ej: "", "sukhavati", etc.
-  return `${base ? base + '/' : ''}users/${u}/${yyyy}/${mm}`
+  const base = (process.env.S3_PREFIX || '').replace(/\/+$/, '') // opcional
+  const root = base ? `${base}/` : ''
+  return `${root}pagos/${s}/${yyyy}/${mm}`
 }
 
 // --- BÚSQUEDA (igual) ---
@@ -65,31 +72,38 @@ router.get('/payments', async (req, res) => {
 
 // --- UPLOAD A S3 (con carpeta por usuario) ---
 router.post('/upload', authRequired, upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'NO_FILE' })
-  if (req.file.mimetype !== 'application/pdf') return res.status(400).json({ error: 'ONLY_PDF' })
-
-  const bucket = process.env.S3_BUCKET
-  const userPrefix = buildUserPrefix(req.user) // <- users/<user>/<yyyy>/<mm>
-
-  const baseName = sanitize(req.file.originalname.replace(/\.pdf$/i, '')) || 'documento'
-  const key = `${userPrefix}/${Date.now()}-${baseName}.pdf`
-
   try {
+    if (!req.file) return res.status(400).json({ ok:false, error:'NO_FILE' })
+    if (req.file.mimetype !== 'application/pdf') {
+      return res.status(400).json({ ok:false, error:'ONLY_PDF' })
+    }
+
+    const { socio, id_cargo, id_transaccion } = req.body || {}
+    if (!socio) return res.status(400).json({ ok:false, error:'SOCIO_REQUIRED' })
+
+    const prefix = buildPagosPrefix(socio)
+
+    const baseName = sanitizeFilename(req.file.originalname)
+    const ids = [id_cargo, id_transaccion].filter(Boolean).map(sanitize).join('_')
+    const fileName = `${ids ? ids + '-' : ''}${baseName}.pdf`
+
+    const key = `${prefix}/${fileName}`
+
     await s3.send(new PutObjectCommand({
-      Bucket: bucket,
+      Bucket: process.env.S3_BUCKET,
       Key: key,
       Body: req.file.buffer,
       ContentType: 'application/pdf',
-      // ⚠️ si tu bucket NO es público, quita ACL y sirve por presigned URL o CloudFront
-      // ACL: 'public-read',
     }))
 
-    const base = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com`
-    const url = `${base}/${key}`
-    res.json({ url, key })
+    const url = `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+    res.json({ ok:true, url, key })
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'S3_UPLOAD_ERROR' })
+    if (err.message === 'SOCIO_REQUIRED') {
+      return res.status(400).json({ ok:false, error:'SOCIO_REQUIRED' })
+    }
+    console.error('S3_UPLOAD_ERROR', err)
+    res.status(500).json({ ok:false, error:'S3_UPLOAD_ERROR' })
   }
 })
 
