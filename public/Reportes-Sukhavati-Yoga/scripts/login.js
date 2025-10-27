@@ -101,7 +101,7 @@ $('#btn-reset-ask')?.addEventListener('click', async () => {
     if (!email) return put('#log-msg','El correo es obligatorio.')
     if (!isEmail(email)) return put('#log-msg','Escribe un correo válido.')
 
-    const btn = $('#btn-reset-ask'); btn.disabled = true; btn.textContent = 'Enviando…'
+    const btn = $('#btn-reset-ask'); btn.disabled = true; btn.textContent = 'Enviando...'
     await requestReset({ email })
     put('#log-msg','Si el correo existe, se envió un enlace.')
     btn.disabled = false; btn.textContent = 'Olvidé mi contraseña'

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function showLoading(cols = 10) {
   const tbody = document.querySelector('#tbody')
   if (!tbody) return
-  tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Cargando…</td></tr>`
+  tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Cargando...</td></tr>`
 }
 
 function showEmpty(msg = 'Sin datos') {

@@ -13,6 +13,7 @@ const selFechaIni  = () => document.getElementById('filter-start-date');
 const selFechaFin  = () => document.getElementById('filter-end-date');
 const selSegmen  = () => document.getElementById('filter-segment');
 const selEstado  = () => document.getElementById('filter-status');
+const selMetodoPago = () => document.getElementById('filter-payment-method');
 
 const rangeBox     = () => document.getElementById('filters-range');
 const btnMonthly   = () => document.getElementById('btn-monthly');
@@ -175,21 +176,21 @@ function setMode(mode) {
   buttons.forEach(b => b.classList.toggle('primary', b.dataset.mode === mode));
 
   if (mode === PeriodMode.consecutive) {
-    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showFortnightly: false });
     showRangeSection(true);
   }
   else if (mode === PeriodMode.monthly) {
-    toggleFilterVisibility({ showYear: true, showMonth: true,  showWeek: false, showQuincena: false });
+    toggleFilterVisibility({ showYear: true, showMonth: true,  showWeek: false, showFortnightly: false });
     showRangeSection(false);
     setDefaultRangeThisMonth();
   } else if (mode === PeriodMode.weekly) {
-    toggleFilterVisibility({ showYear: true, showMonth: false, showWeek: true,  showQuincena: false });
+    toggleFilterVisibility({ showYear: true, showMonth: false, showWeek: true,  showFortnightly: false });
     showRangeSection(false);
   } else if (mode === PeriodMode.fortnightly) {
-    toggleFilterVisibility({ showYear: true, showMonth: true,  showWeek: false, showQuincena: true  });
+    toggleFilterVisibility({ showYear: true, showMonth: true,  showWeek: false, showFortnightly: true  });
     showRangeSection(false);
   } else { 
-    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showFortnightly: false });
     showRangeSection(true);
   }
 }
@@ -202,13 +203,14 @@ function showRangeSection(show) {
 export function getFilterValues() {
   const base = {
     mode: getCurrentMode(),
-    anio: parseInt(selYear().value, 10),
-    mes: parseInt(selMonth().value, 10),
-    quincena: selQ().value ? parseInt(selQ().value, 10) : undefined,
-    iso_semana: selWeek().value ? parseInt(selWeek().value, 10) : undefined,
-    producto: selProd().value || undefined,
-    segmento: selSegmen().value || undefined,
-    estado: selEstado().value || undefined,
+    anio: parseInt(selYear()?.value, 10),
+    mes: parseInt(selMonth()?.value, 10),
+    quincena: selQ()?.value ? parseInt(selQ().value, 10) : undefined,
+    iso_semana: selWeek()?.value ? parseInt(selWeek().value, 10) : undefined,
+    producto: selProd()?.value || undefined,
+    segmento: selSegmen()?.value || undefined,
+    estado: selEstado()?.value || undefined,
+    metodo: selMetodoPago()?.value || undefined,
   };
 
   if (base.mode === PeriodMode.consecutive || base.mode === PeriodMode.range) {
@@ -405,13 +407,13 @@ export function toggleFilterVisibility({
   showYear = true,
   showMonth = false,
   showWeek = false,
-  showQuincena = false
+  showFortnightly = false
 } = {}) {
   const config = [
     ['filter-year',     showYear],
     ['filter-monthly',      showMonth],
     ['filter-weekly',   showWeek],
-    ['filter-fortnightly', showQuincena],
+    ['filter-fortnightly', showFortnightly]
   ];
 
   for (const [id, show] of config) {
@@ -477,6 +479,34 @@ export async function loadproductsSelect({ preserve = true } = {}) {
   }
 }
 
+export async function loadFormaPagoSelect({ preserve = true } = {}) {
+  const sel = document.getElementById('filter-payment-method');
+  if (!sel) return;
+
+  const prev = preserve ? (sel.value ?? '') : '';
+
+  try {
+    const res = await fetch('/api/paymentreports/formapago');
+    let formaPago = await res.json();
+
+    formaPago = Array.from(new Set(
+      (formaPago || []).map(e => String(e ?? '').trim())
+    )).filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+    sel.replaceChildren(new Option('Todos', ''));
+    for (const e of formaPago) {
+      sel.appendChild(new Option(e, e));
+    }
+
+    if (preserve && prev && formaPago.includes(prev)) {
+      sel.value = prev;
+    }
+  } catch (err) {
+    console.error('Error cargando formas de pago:', err);
+    if (!sel.options.length) sel.appendChild(new Option('Todos', ''));
+  }
+}
+
 export function setDefaultRangeThisMonth() {
   const ini = document.getElementById('filter-start-date');
   const fin = document.getElementById('filter-end-date');
@@ -513,16 +543,24 @@ export async function cargarConsecutivo(filters) {
   const titulo = `CONSECUTIVO ${filters.fecha_inicio} a ${filters.fecha_fin}`
   dataToExport(titulo, rows)
   const columns = [
-    'id_transaccion','id_suscripcion','id_cargo',
-    'nombre','apellidos','concepto','precio','descuento','estado',
-    'total','metodo_pago','fecha','notas'
-  ];
-  const groups = [
-    { label:'Identificadores', span:3 },
-    { label:'Datos',           span: columns.length - 3 },
+    'id_socio',
+    'socio',
+    'concepto',
+    'total',
+    'metodo_pago',
+    'notas',
+    'fecha_de_registro',
+    'fecha_de_valor',
+    'estado',
+    'evidencia_pago_url',
+    'precio',
+    'descuento',
+    'id_transaccion',
+    'id_suscripcion',
+    'id_cargo',
   ];
   renderGroupedTable({
-    groups,
+    groups: [{ label: titulo, span: 5 }],
     columns,
     rows,
     sumCols: ['total'],

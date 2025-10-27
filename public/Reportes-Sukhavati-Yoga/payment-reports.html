@@ -17,10 +17,11 @@
             <p class="muted">Consulta los pagos agrupados por periodo y forma de pago.</p>
             <nav id="report-nav">
                 <button id="btn-consecutive" class="btn primary" data-mode="consecutive">Consecutivo</button>
-                <!-- <button id="btn-monthly" class="btn" data-mode="monthly">Mensual</button>
+                <!-- 
+                <button id="btn-monthly" class="btn" data-mode="monthly">Mensual</button>
                 <button id="btn-weekly" class="btn" data-mode="weekly">Semanal</button>
                 <button id="btn-fortnightly" class="btn" data-mode="fortnightly">Quincenal</button> -->
-                <button id="btn-range" class="btn" data-mode="range">Método de pago</button>
+                <button id="btn-range" class="btn" data-mode="range">Forma de pago</button>
             </nav>
             <div class="page-wrap">
                 <section id="filters" class="filters">
@@ -52,6 +53,11 @@
                         </label>
                         <label class="filter-item">SEMANA (ISO)
                             <select id="filter-weekly"></select>
+                        </label>
+                        <label class="filter-item">FORMA DE PAGO
+                            <select id="filter-payment-method">
+                                <option value="">Todos</option>
+                            </select>
                         </label>
                         <label class="filter-item">PRODUCTO
                             <select id="filter-product">

@@ -28,7 +28,7 @@ function onlyDigits(s) {
 
 function buildIngestSig(row) {
   const parts = []
-  for (const k of ['id_socio','id_socio_externo','email','nif']) {
+  for (const k of ['id_socio','id_socio_externo','email']) {
     parts.push(String(row[k]?.toLowerCase() ?? ''))
   }
   if (!parts.some(x => x)) {
@@ -95,7 +95,7 @@ export async function upsertPartnersRows(rows, { schema='reportes_sukhavati', ta
     deduped.push(r); seen.add(r.ingest_sig)
   }
   if (!deduped.length) return { inserted: 0, updated: 0 }
-
+  
   const cols = [...allowed, 'ingest_sig']
   const setUpdates = allowed.map(
     c => `"${c}" = CASE WHEN EXCLUDED."${c}" IS NOT NULL AND (EXCLUDED."${c}"::text IS DISTINCT FROM ''::text) THEN EXCLUDED."${c}" ELSE "${table}"."${c}" END`

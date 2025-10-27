@@ -221,15 +221,15 @@ router.get('/consecutivo', async (req, res) => {
     const segmento = toLikeOrNull(req.query.segmento);
     const metodo   = toLikeOrNull(req.query.metodo);
     const estado   = toLikeOrNull(req.query.estado);
-
+    
     if (!iniParam || !finParam) {
       return res.status(400).json({ ok: false, error: 'Debes enviar fecha_inicio y fecha_fin (YYYY-MM-DD)' });
     }
 
     const sql = `
       SELECT *
-      FROM reportes_sukhavati.fn_rpt_cobranza_detalle_rango($1,$2,$3,$4,$5,$6)
-      ORDER BY fecha, apellidos, nombre;
+      FROM reportes_sukhavati.fn_rpt_cobranza_detalle_rango($1, $2, $3, $4, $5, $6)
+      ORDER BY fecha_de_registro, socio
     `;
     const { rows } = await query(sql, [iniParam, finParam, producto, metodo, estado, segmento]);
     res.json(rows);
@@ -271,6 +271,24 @@ router.get('/estados', async (req, res) => {
     res.json(rows.map(r => r.estado));
   } catch (err) {
     handleError(res, err, 'estados');
+  }
+});
+
+/* =======================================
+ * 11) Catálogo de Formas de pagos
+ * =======================================*/
+router.get('/formapago', async (req, res) => {
+  try {
+    const sql = `
+      SELECT DISTINCT INITCAP(LOWER(btrim(metodo_de_pago))) AS metodo_pago
+      FROM reportes_sukhavati.pagos
+      WHERE metodo_de_pago IS NOT NULL AND btrim(metodo_de_pago) <> ''
+      ORDER BY metodo_pago;
+    `;
+    const { rows } = await query(sql);
+    res.json(rows.map(r => r.metodo_pago));
+  } catch (err) {
+    handleError(res, err, 'formapago');
   }
 });
 

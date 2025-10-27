@@ -499,3 +499,8 @@ tr:hover td {
         color: #a9b4c2;
     }
 }
+
+table td.empty {
+    text-align: left !important;
+    padding-left: 12px;
+}

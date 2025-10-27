@@ -1,5 +1,5 @@
 import * as XLSX from "https://esm.sh/xlsx";
-import { initFilters, loadproductsSelect, loadEstadosSelect, getFilterValues, toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
+import { initFilters, loadproductsSelect, loadEstadosSelect, loadFormaPagoSelect, getFilterValues, toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const nav = document.getElementById('report-nav');
@@ -27,7 +27,7 @@ function showLoading(cols = 6) {
     tbody = document.createElement('tbody');
     t.appendChild(tbody);
   }
-  tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Cargando…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Cargando...</td></tr>`;
 }
 
 let active = 'consecutive';
@@ -37,6 +37,14 @@ function toggleRangeVisibility(show) {
   const box = document.getElementById('filters-range');
   if (!box) return;
   box.classList.toggle('hidden', !show);
+}
+
+function togglePaymentMethodVisibility(show) {
+  const box = document.getElementById('filter-payment-method');
+  if (!box) return;
+
+  const label = box.closest('label'); // obtiene el label contenedor
+  if (label) label.classList.toggle('hidden', !show);
 }
 
 async function cargarMensualFormaPago(filters) {
@@ -118,7 +126,7 @@ async function cargarRangoFormaPago(filters) {
     const data = (Array.isArray(rows) ? rows : []).filter(
       r => String(r.metodo_de_pago).toUpperCase() !== 'TOTAL'
     );
-    const titulo = `PAGOS POR RANGO ${ini} a ${fin}`
+    const titulo = `FORMA DE PAGO ${ini} a ${fin}`
     dataToExport(titulo, data)
     renderGroupedTable({
       groups: [{ label: titulo, span: 4 }],
@@ -138,6 +146,7 @@ async function loadActive() {
   if (active === 'consecutive') {
     toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
     toggleRangeVisibility(true);
+    togglePaymentMethodVisibility(true);
     setDefaultWeekIfEmpty();            
     const filters = getFilterValues();    
     await cargarConsecutivo(filters);
@@ -147,6 +156,7 @@ async function loadActive() {
 
   if (active === 'monthly') {
     toggleRangeVisibility(false);
+    togglePaymentMethodVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: true, showQuincena: false, showWeek: false });
     const filters = getFilterValues();
     await cargarMensualFormaPago(filters);
@@ -154,6 +164,7 @@ async function loadActive() {
 
   if (active === 'weekly') {
     toggleRangeVisibility(false);
+    togglePaymentMethodVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: false, showWeek: true, showQuincena: false });
     const filters = getFilterValues();
     await cargarSemanalFormaPago(filters);
@@ -161,21 +172,16 @@ async function loadActive() {
 
   if (active === 'fortnightly') {
     toggleRangeVisibility(false);
+    togglePaymentMethodVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: true, showWeek: false, showQuincena: true });
     const filters = getFilterValues();
     await cargarQuincenalFormaPago(filters);
   }
 
-  if (active === 'porlinea') {
-    toggleRangeVisibility(false);
-    toggleFilterVisibility({ showYear: true, showMonth: true, showWeek: false, showQuincena: false });
-    const filters = getFilterValues();
-    await cargarmonthlyPorLinea(filters);
-  }
-
   if (active === 'range') {
     toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
     toggleRangeVisibility(true);
+    togglePaymentMethodVisibility(false);
     const ini = document.getElementById('filter-start-date')?.value;
     const fin = document.getElementById('filter-end-date')?.value;
     if (!ini || !fin) {
@@ -218,7 +224,8 @@ document.getElementById('btn-range')?.addEventListener('click', async (e) => {
   await loadActive();
 });
 
-['filter-year','filter-monthly','filter-fortnightly','filter-weekly','filter-product','filter-start-date','filter-end-date','filter-segment','filter-status'].forEach(id => {
+['filter-year','filter-monthly','filter-fortnightly','filter-weekly','filter-product','filter-start-date',
+  'filter-end-date','filter-segment','filter-status','filter-payment-method'].forEach(id => {
   document.getElementById(id)?.addEventListener('change', loadActive);
 });
 
@@ -356,5 +363,6 @@ function setDefaultWeekIfEmpty() {
 initFilters();
 loadEstadosSelect();
 loadproductsSelect();
+loadFormaPagoSelect();
 loadActive();
 
