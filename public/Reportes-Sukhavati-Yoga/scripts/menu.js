@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!payload) return
 
   document.getElementById('user-info').textContent =
-    `Conectado como: ${payload.email} | Rol: ${payload.role}`
+    `${payload.email} | Rol: ${payload.role}`
 
   const btnUploadInformation = document.getElementById('btn-go-load')
   const btnUploadPDFPayments = document.getElementById('btn-go-upload-pdf-payments')

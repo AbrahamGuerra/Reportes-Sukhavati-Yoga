@@ -99,3 +99,64 @@
     border-color: color-mix(in oklab, var(--rng-accent, #5b8dff) 60%, #ffffff 0%);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--rng-accent, #5b8dff) 30%, transparent 70%);
 }
+
+/* === Ajustes responsivos adicionales para móviles === */
+@media (max-width: 600px) {
+    .page-wrap {
+        font-size: 13px;
+        padding: 0 12px;
+    }
+
+    .range-card.filters {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .range-card.filters label {
+        font-size: 0.75rem;
+    }
+
+    .range-card.filters input[type="text"],
+    .range-card.filters input[type="search"],
+    .range-card.filters input[type="date"] {
+        font-size: 0.9rem;
+        height: 42px;
+        padding: 0 10px;
+    }
+
+    .filters .row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .filters .filter-item {
+        width: 100%;
+    }
+
+    .filters .filter-item label {
+        font-size: 0.8rem;
+    }
+
+    .filters .filter-item input,
+    .filters .filter-item select {
+        font-size: 0.9rem;
+        height: 42px;
+    }
+
+    .report-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .btn {
+        width: 100%;
+        height: 44px;
+        line-height: normal;
+        font-size: 0.95rem;
+        padding: 10px;
+    }
+}

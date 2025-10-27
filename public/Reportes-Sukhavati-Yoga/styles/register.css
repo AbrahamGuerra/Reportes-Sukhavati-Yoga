@@ -73,3 +73,45 @@ button:hover {
     opacity: 0.9;
     text-align: center;
 }
+
+/* === Ajustes responsivos para móviles === */
+@media (max-width: 600px) {
+    body {
+        padding: 0 16px;
+    }
+
+    .card {
+        margin: 5vh auto;
+        max-width: 100%;
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .card h2 {
+        font-size: 1.4rem;
+    }
+
+    label {
+        font-size: 0.85rem;
+    }
+
+    input {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .row {
+        gap: 10px;
+    }
+
+    .msg {
+        font-size: 0.85rem;
+        margin-top: 10px;
+    }
+}

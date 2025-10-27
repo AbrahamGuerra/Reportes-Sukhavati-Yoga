@@ -381,3 +381,105 @@ select {
   transform: scale(1.05);
   transition: all 0.2s ease;
 }
+
+/* === Ajustes responsivos generales === */
+@media (max-width: 900px) {
+  .container {
+    padding: 20px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .menu-top {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .btn-square {
+    width: 45%;
+    height: 120px;
+    font-size: 1rem;
+  }
+}
+
+/* === Ajustes específicos para móviles === */
+@media (max-width: 600px) {
+  .container {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .card {
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .menu {
+    gap: 16px;
+    padding: 20px 0;
+  }
+
+  .menu-top {
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .btn-square {
+    width: 100%;
+    height: 100px;
+    font-size: 1rem;
+  }
+
+  .filters {
+    gap: 8px;
+  }
+
+  .filters .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .filter-item {
+    min-width: 100%;
+  }
+
+  .btn,
+  .btn.primary {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .modal-card {
+    width: 94vw;
+    border-radius: 12px;
+  }
+
+  .modal-body {
+    padding: 12px 16px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal-btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .warning {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+}

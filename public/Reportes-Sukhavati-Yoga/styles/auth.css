@@ -130,3 +130,54 @@ input::placeholder {
     margin-bottom: 1rem;
     padding: .75rem;
 }
+
+/* === Ajustes responsivos adicionales === */
+@media (max-width: 720px) {
+    .container-auth {
+        padding: 16px;
+        place-items: center;
+    }
+
+    .auth-card {
+        padding: 20px;
+        border-radius: 12px;
+        width: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .auth-header h1 {
+        font-size: 1.4rem;
+    }
+
+    label {
+        font-size: 0.75rem;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+        height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-actions button {
+        width: 100%;
+        font-size: 1rem;
+        padding: 10px;
+    }
+
+    .section-link {
+        display: inline-block;
+        font-size: 0.9rem;
+        margin: 0 6px;
+    }
+
+    .notice {
+        font-size: 0.85rem;
+    }
+}

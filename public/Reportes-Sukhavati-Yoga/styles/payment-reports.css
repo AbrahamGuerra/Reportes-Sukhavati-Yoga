@@ -291,3 +291,211 @@ tr:hover td {
         grid-template-columns: 1fr;
     }
 }
+
+/* === Mejoras responsivas adicionales para móviles === */
+@media (max-width: 600px) {
+    .payment-reports-container {
+        padding: 20px 12px;
+        gap: 16px;
+    }
+
+    .report-buttons {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .report-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        font-size: 0.95rem;
+        padding: 10px;
+    }
+
+    .range-card {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 0.9rem;
+    }
+
+    .range-card label {
+        font-size: 0.8rem;
+    }
+
+    .range-card input[type="date"] {
+        font-size: 0.9rem;
+        height: 44px;
+    }
+
+    .filters .row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .filters select {
+        width: 100%;
+        height: 42px;
+    }
+
+    .table-scroll {
+        max-height: unset;
+        overflow-x: auto;
+    }
+
+    table {
+        font-size: 0.85rem;
+        border-radius: 8px;
+    }
+
+    th,
+    td {
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+
+    .pager {
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pager .pager-info {
+        text-align: center;
+    }
+}
+
+/* === MOBILE TUNE-UP (≤600px) === */
+@media (max-width: 600px) {
+
+    /* contenedor general */
+    .payment-reports-container {
+        padding: 16px 12px;
+        gap: 14px;
+    }
+
+    .page-wrap {
+        width: 100%;
+    }
+
+    /* NAV: que no se rompa y se deslice horizontal */
+    #report-nav {
+        justify-content: flex-start;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+    }
+
+    #report-nav .btn {
+        white-space: nowrap;
+        padding: 8px 12px;
+        border-radius: 10px;
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+    }
+
+    /* filtros en columna */
+    .filters .row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .filter-item {
+        min-width: 100%;
+    }
+
+    .filters label {
+        font-size: .82rem;
+    }
+
+    /* Rango de fechas como card full-width */
+    .range-card {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+        padding: .9rem;
+        border-radius: 12px;
+    }
+
+    .range-card .date-field {
+        gap: .35rem;
+    }
+
+    .range-card label {
+        font-size: .78rem;
+        letter-spacing: .06em;
+    }
+
+    .range-card input[type="date"] {
+        height: 44px;
+        font-size: .95rem;
+        padding: 0 10px;
+    }
+
+    .range-card .range-hint {
+        font-size: .8rem;
+        padding-top: .5rem;
+    }
+
+    /* Botón volver + acciones: columna y full width */
+    .report-actions,
+    .reports-actions,
+    .report-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+    }
+
+    /* Tabla: tipografía compacta y scroll horizontal cómodo */
+    .table-scroll {
+        max-height: unset;
+        /* evita cortar la tabla en pantallas bajas */
+        overflow: auto;
+        border-radius: 10px;
+    }
+
+    #table-payment-reports {
+        min-width: 720px;
+        /* más amable que 960px en móviles */
+        font-size: .88rem;
+    }
+
+    #table-payment-reports th,
+    #table-payment-reports td {
+        padding: 8px 10px;
+    }
+
+    /* Paginador en columna */
+    .pager {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px 0 4px;
+    }
+
+    .pager .pager-info {
+        text-align: center;
+    }
+}
+
+/* extra: mejora contraste de labels en modo oscuro muy oscuro */
+@media (prefers-color-scheme: dark) {
+
+    .filters label,
+    .range-card label {
+        color: #a9b4c2;
+    }
+}
