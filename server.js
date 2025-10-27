@@ -24,6 +24,10 @@ app.use('/api/paymentreports', paymentReports)
 app.use('/api/bucket', bucket)
 app.use('/api/auth', authRoutes)
 
+app.get('/api/health', (req, res) => {
+  res.status(200).send('ok')
+})
+
 const port = Number(process.env.PORT || 3001)
 app.listen(port, () => {
   console.log(`Sukhavati on port: ${port}`)
