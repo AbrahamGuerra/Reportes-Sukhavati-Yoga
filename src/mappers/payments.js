@@ -253,6 +253,7 @@ function mergePayments(reporteRows, historicoRows) {
 
 function buildIngestSig(row) {
   const base = [
+    String(row.idSocio?.toLowerCase() ?? ''),
     String(row.id_transaccion?.toLowerCase() ?? ''),
     String(row.id_suscripcion?.toLowerCase() ?? ''),
     String(row.socio?.toLowerCase() ?? ''),
@@ -270,6 +271,67 @@ function pickText(v) {
   if (v == null) return null
   const s = String(v).trim()
   return s === '' ? null : s
+}
+
+// === Resolver id_socio cuando falta ===
+async function findIdSocioByGuess({ socio, nombre, apellidos }) {
+  const qSocio   = (socio || '').trim();
+  const qNomApe  = [nombre || '', apellidos || ''].join(' ').trim();
+
+  // Sin nada que buscar
+  if (!qSocio && !qNomApe) return null;
+
+  // Preferimos coincidencia exacta (case-insensitive), si no, LIKE con %
+  const sql = `
+    WITH cand AS (
+      SELECT
+        s.id_socio,
+        s.socio,
+        -- scores para ordenar mejores matches
+        (lower(btrim(s.socio)) = lower(btrim($1)))::int                                       AS exact_soc,
+        (lower(btrim(s.socio)) = lower(btrim($2)))::int                                       AS exact_na,
+        (lower(btrim(s.socio)) LIKE ('%' || lower(btrim($1)) || '%'))::int                    AS like_soc,
+        (lower(btrim(s.socio)) LIKE ('%' || lower(btrim($2)) || '%'))::int                    AS like_na
+      FROM reportes_sukhavati.socios s
+      WHERE
+        ($1 <> '' AND lower(btrim(s.socio)) LIKE ('%' || lower(btrim($1)) || '%'))
+        OR
+        ($2 <> '' AND lower(btrim(s.socio)) LIKE ('%' || lower(btrim($2)) || '%'))
+    )
+    SELECT id_socio
+    FROM cand
+    ORDER BY exact_soc DESC, exact_na DESC, like_soc DESC, like_na DESC
+    LIMIT 1;
+  `;
+  const params = [qSocio, qNomApe];
+  const { rows } = await query(sql, params);
+  return rows[0]?.id_socio ?? null;
+}
+
+async function enrichRowsWithIdSocio(rows) {
+  const cache = new Map(); // clave: "soc|nombre apellidos" -> id_socio/null
+
+  for (const r of rows) {
+    // Normalizamos ambos: si ya viene uno, úsalo para poblar el otro.
+    if (r.id_socio && !r.idSocio) r.idSocio = r.id_socio;
+    if (r.idSocio && !r.id_socio) r.id_socio = r.idSocio;
+
+    if (!r.id_socio) {
+      const key = `${(r.socio || '').toLowerCase()}|${(r.nombre || '').toLowerCase()} ${(r.apellidos || '').toLowerCase()}`;
+      if (!cache.has(key)) {
+        const found = await findIdSocioByGuess({
+          socio: r.socio || '',
+          nombre: r.nombre || '',
+          apellidos: r.apellidos || '',
+        });
+        cache.set(key, found);
+      }
+      const idFound = cache.get(key) || null;
+      r.id_socio = idFound;   // lo que inserta el upsert
+      r.idSocio  = idFound;   // por consistencia con la ingest_sig actual
+    }
+  }
+  return rows;
 }
 
 function mapMergedToPayments(m) {
@@ -317,10 +379,13 @@ function mapMergedToPayments(m) {
   const metodo_from_his = normText(firstNonNull(Historico, ['Método de pago','metodo de pago','Método de pago','Metodo de pago']))
   const metodo_de_pago = pickText(metodo_from_rep || metodo_from_his)
 
+  const idSocio = pickText(firstNonNull(Reporte, ['idMember','id_Member']))
+
   const out = {
     factura: null,
     id_cargo,
     cod_autorizacion,
+    idSocio,
     socio,
     nombre,
     apellidos,
@@ -365,7 +430,7 @@ function mapMergedToPayments(m) {
 async function upsertPayments(rows, { schema='reportes_sukhavati', table='pagos' } = {}) {
   if (!rows?.length) return { inserted: 0, updated: 0 }
   const cols = [
-    'factura','id_cargo','cod_autorizacion','socio','nombre','apellidos','email','ine_curp',
+    'factura','id_cargo','cod_autorizacion','id_socio','socio','nombre','apellidos','email','ine_curp',
     'producto','tipo_producto','concepto','tipo','precio','cantidad','descuento','subtotal',
     'bruto','impuesto','total','metodo_de_pago','tipo_de_pago','cupon_codigo',
     'cupon_porcentaje','cupon_monto','tarjeta','no_de_tarjeta','origen_de_pago','canal',
@@ -446,7 +511,7 @@ export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_su
     seen.add(sig); final.push(row)
   }
 
-  //Si el role es diferente de ADMIN filtrar solo pagos de los últimos 7 días 
+  //Si el rol es diferente de ADMIN filtrar solo pagos de los últimos 7 días 
   let rowsToUpsert = final
 
   if (role !== 'admin') {
@@ -456,6 +521,7 @@ export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_su
     }
   }
 
+  await enrichRowsWithIdSocio(final);
   const res = await upsertPayments(rowsToUpsert, { schema })
   return { ...res, merged: merged.length, missesTotal: misses.length, misses: misses }
 }
