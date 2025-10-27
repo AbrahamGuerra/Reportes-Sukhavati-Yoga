@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { query } from '../DB/db.js'
 import { sendMail } from '../utils/mailer.js'
+import { authRequired } from '../auth/middleware.js'
 const router = express.Router()
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
@@ -12,18 +13,6 @@ const TOKEN_TTL_HOURS = 24
 function signUser(user) {
   const payload = { id: user.id, email: user.email, role: user.code_role }
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
-}
-
-function authRequired(req, res, next) {
-  const auth = req.headers.authorization || ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-  if (!token) return res.status(401).json({ ok:false, error:'NO_TOKEN' })
-  try {
-    req.user = jwt.verify(token, JWT_SECRET)
-    next()
-  } catch {
-    return res.status(401).json({ ok:false, error:'INVALID_TOKEN' })
-  }
 }
 
 /**
@@ -88,7 +77,7 @@ router.post('/request-register', async (req, res) => {
     `
     await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html })
 
-    return res.json({ ok: true, message: 'REGISTER_EMAIL_SENT' })
+    return res.json({ ok: true, message: 'CORREO ENVIADO' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok: false, error: err.message })
@@ -315,11 +304,44 @@ router.post('/request-role-change', authRequired, async (req, res) => {
 })
 
 /**
- * 7) Aprobar/Rechazar cambio de rol (requiere rol admin – aquí lo validamos vía JWT)
+ * 7) // Listar solicitudes de cambio de rol
+ */
+router.get('/admin/role-requests', authRequired, async (req,res) => {
+  try {
+    const status = (req.query.status || 'pendiente').toLowerCase()
+    const { rows } = await query(
+      `SELECT rr.id,
+              rr.id_user,
+              u.email,
+              u.name,
+              rr.id_requested_role,
+              r.code AS requested_role_code,
+              r.name AS requested_role_name,
+              rr.reason,
+              rr.status,
+              rr.create_in AS requested_in,  -- 👈 en tu DDL es "create_in"
+              rr.solved_in
+         FROM reportes_sukhavati.requests_change_role rr
+         JOIN reportes_sukhavati.users u  ON u.id = rr.id_user
+         JOIN reportes_sukhavati.roles r  ON r.id = rr.id_requested_role
+        WHERE rr.status = $1
+        ORDER BY rr.create_in DESC`,
+      [status]
+    )
+    res.json(rows)
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ ok:false, error:e.message })
+  }
+})
+
+/**
+ * 8) Aprobar/Rechazar cambio de rol (requiere rol admin – aquí lo validamos vía JWT)
  */
 router.post('/resolve-role-change', authRequired, async (req,res) => {
   try {
-    if (req.user.rol !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
+    const role = String(req.user?.role || '').trim().toLowerCase();
+    if (role !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
     const { id, approve } = req.body
     if (!id) return res.status(400).json({ ok:false, error:'ID_REQUIRED' })
 
@@ -349,7 +371,7 @@ router.post('/resolve-role-change', authRequired, async (req,res) => {
 })
 
 /**
- * 8) Registro completado
+ * 9) Registro completado
  */
 router.post('/register-complete', async (req, res) => {
   try {
@@ -435,7 +457,7 @@ router.post('/register-complete', async (req, res) => {
 })
 
 /**
- * 9) Reenviar registro
+ * 10) Reenviar registro
  */
 router.post('/register-resend', async (req, res) => {
   try {
@@ -474,12 +496,11 @@ router.post('/register-resend', async (req, res) => {
     `
     await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html })
 
-    return res.json({ ok:true, message:'REGISTER_EMAIL_SENT' })
+    return res.json({ ok:true, message:'CORREO ENVIADO' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok:false, error: err.message })
   }
 })
-
 
 export default router

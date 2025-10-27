@@ -1,5 +1,5 @@
 import * as XLSX from "https://esm.sh/xlsx";
-import { initFilters, loadproductsSelect, loadEstadosSelect, getFilterValues, toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo } from './api.js';
+import { initFilters, loadproductsSelect, loadEstadosSelect, getFilterValues, toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const nav = document.getElementById('report-nav');
@@ -43,8 +43,10 @@ async function cargarMensualFormaPago(filters) {
   const q = buildQuery({ anio: filters.anio, mes: filters.mes, producto: filters.producto, segmento: filters.segmento, estado: filters.estado || undefined });
   const raw = await fetchJSON(`/api/paymentreports/mensual-formapago${q}`);
   const data = (raw || []).filter(r => String(r.segmento).toUpperCase() !== 'TOTAL');
+  const titulo = `PAGOS mensual ${filters.anio}-${String(filters.mes).padStart(2,'0')}`
+  dataToExport(titulo, data)
   renderGroupedTable({
-    groups: [{ label: `COBRANZA monthly ${filters.anio}-${String(filters.mes).padStart(2,'0')}`, span: 3 }],
+    groups: [{ label: titulo, span: 3 }],
     columns: ['segmento','metodo_de_pago','monto'],
     rows: data,
     sumCols: ['monto'],
@@ -55,8 +57,10 @@ async function cargarSemanalFormaPago(filters) {
   const q = buildQuery({ iso_anio: filters.anio, iso_semana: filters.iso_semana, producto: filters.producto, segmento: filters.segmento, estado: filters.estado || undefined });
   const raw = await fetchJSON(`/api/paymentreports/semanal-formapago${q}`);
   const data = (raw || []).filter(r => String(r.segmento).toUpperCase() !== 'TOTAL');
+  const titulo = `PAGOS semanal ${filters.anio}${filters.iso_semana ? ' - Sem ' + String(filters.iso_semana).padStart(2,'0') : ''}`
+  dataToExport(titulo, data)
   renderGroupedTable({
-    groups: [{ label: `COBRANZA weekly ${filters.anio}${filters.iso_semana ? ' - Sem ' + String(filters.iso_semana).padStart(2,'0') : ''}`, span: 5 }],
+    groups: [{ label: titulo, span: 5 }],
     columns: ['iso_anio','iso_semana','segmento','metodo_de_pago','monto'],
     rows: data,
     sumCols: ['monto'],
@@ -67,8 +71,10 @@ async function cargarQuincenalFormaPago(filters) {
   const q = buildQuery({ anio: filters.anio, mes: filters.mes, quincena: filters.quincena, producto: filters.producto, segmento: filters.segmento, estado: filters.estado || undefined });
   const raw = await fetchJSON(`/api/paymentreports/quincenal-formapago${q}`);
   const data = (raw || []).filter(r => String(r.segmento).toUpperCase() !== 'TOTAL');
+  const titulo = `PAGOS por quincena ${filters.anio}-${String(filters.mes).padStart(2,'0')}${filters.quincena ? ' Q' + filters.quincena : ''}`
+  dataToExport(titulo, data)
   renderGroupedTable({
-    groups: [{ label: `COBRANZA fortnightly ${filters.anio}-${String(filters.mes).padStart(2,'0')}${filters.quincena ? ' Q' + filters.quincena : ''}`, span: 5 }],
+    groups: [{ label: titulo, span: 5 }],
     columns: ['anio','mes','quincena','segmento','metodo_de_pago','monto'],
     rows: data,
     sumCols: ['monto'],
@@ -112,9 +118,10 @@ async function cargarRangoFormaPago(filters) {
     const data = (Array.isArray(rows) ? rows : []).filter(
       r => String(r.metodo_de_pago).toUpperCase() !== 'TOTAL'
     );
-
+    const titulo = `PAGOS POR RANGO ${ini} a ${fin}`
+    dataToExport(titulo, data)
     renderGroupedTable({
-      groups: [{ label: `COBRANZA POR RANGO ${ini} a ${fin}`, span: 4 }],
+      groups: [{ label: titulo, span: 4 }],
       columns: ['linea_producto', 'producto', 'metodo_de_pago', 'total_mxn'],
       rows: data,
       sumCols: ['total_mxn'],
@@ -240,50 +247,91 @@ function updateExportVisibility(tbody) {
 }
 
 document.getElementById('btn-export').addEventListener('click', () => {
-  const table = document.querySelector('#table-payment-reports');
-  if (!table) return alert('No se encontró la tabla');
+  const rows = window.exportRows || [];
+  const meta = window.exportMeta || {};
+  if (!rows.length) return alert('No hay datos para exportar');
 
-  const anio = document.querySelector('#filter-year')?.value || '';
-  const mes = document.querySelector('#filter-monthly')?.value || '';
-  const producto = document.querySelector('#filter-product')?.selectedOptions?.[0]?.text || 'Todos';
+  // 1) detectar columna a sumar (en este orden)
+  const sumKey = ['total', 'monto', 'total_mxn'].find(k => k in (rows[0] || {})) || 'total';
 
-  const titulo = `Reporte de cobranza ${anio}-${mes}`;
-  const subtitulo = `Producto: ${producto}`;
+  // 2) headers = unión de llaves de todo el dataset (y forzamos sumKey)
+  const headersSet = new Set();
+  for (const r of rows) Object.keys(r || {}).forEach(k => headersSet.add(k));
+  headersSet.add(sumKey);
+  const headers = Array.from(headersSet);
 
-  // --- Crear hoja base ---
-  const ws = XLSX.utils.aoa_to_sheet([[titulo], [subtitulo]]);
-  XLSX.utils.sheet_add_dom(ws, table, { origin: 'A3', raw: true });
+  // 3) hoja: título, subtítulo, encabezados
+  const ws = XLSX.utils.aoa_to_sheet([
+    [meta.titulo || 'Reporte'],
+    [meta.subtitulo || ''],
+    headers
+  ]);
 
-  // --- range y merges ---
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  const colCount = range.e.c + 1;
+  // 4) datos (A4) con orden de columnas fijo
+  XLSX.utils.sheet_add_json(ws, rows, { origin: 'A4', header: headers, skipHeader: true });
+
+  const colCount = headers.length;
+
+  // 5) merges del título/subtítulo
   ws['!merges'] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
   ];
 
-  // --- Encabezados (fila 2) ---
-  const headerRowIndex = 2; // considerando las 2 filas extra arriba
+  // 6) calcular suma
+  const sum = rows.reduce((acc, r) => {
+    const val = r?.[sumKey];
+    const num = typeof val === 'number'
+      ? val
+      : parseFloat(String(val ?? '').replace(/[^0-9.-]/g, '')) || 0;
+    return acc + num;
+  }, 0);
+
+  // 7) escribir fila TOTAL al final
+  const headerRowIdx = 2;     // fila de encabezados (0-based)
+  const dataStartIdx = 3;     // A4 => índice 3
+  const dataRows = rows.length;
+  const totalRowIdx = dataStartIdx + dataRows;  // inmediatamente debajo de los datos
+
+  const sumColIdx = headers.indexOf(sumKey);
+
+  // etiqueta "TOTAL" (columna A)
+  ws[XLSX.utils.encode_cell({ r: totalRowIdx, c: 0 })] = { t: 's', v: 'TOTAL' };
+  // valor del total en la columna sumKey
+  ws[XLSX.utils.encode_cell({ r: totalRowIdx, c: sumColIdx })] = { t: 'n', v: sum, z: '#,##0.00' };
+
+  // 🔧 FIX CLAVE: ampliar el rango de la hoja para que Excel muestre la fila TOTAL
+  const endCell = XLSX.utils.encode_cell({ r: totalRowIdx, c: colCount - 1 });
+  ws['!ref'] = `A1:${endCell}`;
+
+  // (Opcional) ancho de columnas
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(12, String(h).length + 2) }));
+
+  // (Opcional) estilos de encabezados y TOTAL (SheetJS Pro aplica estilos; Community los ignora)
   for (let c = 0; c < colCount; c++) {
-    const addr = XLSX.utils.encode_cell({ r: headerRowIndex, c });
-    const cell = ws[addr];
-    if (cell) {
-      cell.s = {
-        fill: { fgColor: { rgb: "203864" } }, // azul oscuro
-        font: { color: { rgb: "FFFFFF" }, bold: true }, // texto blanco negrita
-        alignment: { horizontal: "center", vertical: "center" },
+    const headAddr = XLSX.utils.encode_cell({ r: headerRowIdx, c });
+    if (ws[headAddr]) {
+      ws[headAddr].s = {
+        fill: { fgColor: { rgb: '203864' } },
+        font: { color: { rgb: 'FFFFFF' }, bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
       };
     }
+    const totalAddr = XLSX.utils.encode_cell({ r: totalRowIdx, c });
+    ws[totalAddr] = ws[totalAddr] || { t: 's', v: '' };
+    ws[totalAddr].s = { ...(ws[totalAddr].s || {}), font: { bold: true } };
   }
 
-  // --- Anchos de columna ---
-  ws["!cols"] = Array.from({ length: colCount }, () => ({ wch: 18 }));
-
-  // --- Crear y exportar workbook ---
+  // 8) guardar
+  // const anio = document.querySelector('#filter-year')?.value || '';
+  // const mes = document.querySelector('#filter-monthly')?.value || '';
+  const producto = document.querySelector('#filter-product')?.selectedOptions?.[0]?.text || 'Todos';
+  const ini = document.getElementById('filter-start-date')?.value;
+  const fin = document.getElementById('filter-end-date')?.value;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-  const nombre = `reporte_${anio}_${mes}_${producto.replace(/[\\/:*?"<>|]/g, "")}.xlsx`;
-  XLSX.writeFile(wb, nombre, { bookType: "xlsx", compression: true });
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+  const nombre = `reporte_${ini}_${fin}_${producto.replace(/[\\/:*?"<>|]/g, '')}.xlsx`;
+  XLSX.writeFile(wb, nombre, { bookType: 'xlsx', compression: true });
 });
 
 function setDefaultWeekIfEmpty() {

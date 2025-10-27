@@ -12,10 +12,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnUploadInformation = document.getElementById('btn-go-load')
   const btnUploadPDFPayments = document.getElementById('btn-go-upload-pdf-payments')
+  const btnAcceptRequestRole = document.getElementById('btn-accept-request-role')
+  const btnRequestRole = document.getElementById('btn-request-role')
 
+  if(payload.role === 'admin'){
+    btnRequestRole.style.display = 'none'
+  }
   if (payload.role === 'views') {
     btnUploadInformation.style.display = 'none'
     btnUploadPDFPayments.style.display = 'none'
+  }
+  if(payload.role !== 'admin'){
+    btnAcceptRequestRole.style.display = 'none'
   }
 })
 
@@ -29,6 +37,10 @@ document.getElementById('btn-go-upload-pdf-payments')?.addEventListener('click',
 
 document.getElementById('btn-go-payment-reports')?.addEventListener('click', () => {
   window.location.href = 'payment-reports.html'
+})
+
+document.getElementById('btn-accept-request-role')?.addEventListener('click', () => {
+  window.location.href = 'admin-roles.html'
 })
 
 const buttons = document.querySelectorAll('.menu-top .btn-square')

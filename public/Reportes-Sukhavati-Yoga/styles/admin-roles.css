@@ -1,0 +1,333 @@
+/* ====== Estilo base oscuro ====== */
+body {
+    background: #0b0d10;
+    color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.auth-header {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* ====== Botones ====== */
+.btn {
+    background: #1a1d23;
+    color: #e5e5e5;
+    border: 1px solid #2a2d33;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    background: #23272f;
+    color: #fff;
+}
+
+/* Botones principales */
+.btn.primary {
+    background: #007aff;
+    border-color: #007aff;
+    color: #fff;
+}
+
+.btn.primary:hover {
+    background: #379eff;
+}
+
+/* Botones de acción */
+.btn.success {
+    background: #00b06f;
+    border-color: #00b06f;
+    color: #fff;
+}
+
+.btn.success:hover {
+    background: #00d685;
+}
+
+.btn.danger {
+    background: #d93d3d;
+    border-color: #d93d3d;
+    color: #fff;
+}
+
+.btn.danger:hover {
+    background: #ff5555;
+}
+
+/* Botones pequeños */
+.btn.small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+/* Botón "Volver" */
+.btn.back {
+    background: transparent;
+    border: 1px solid #444;
+    color: #aaa;
+}
+
+.btn.back:hover {
+    border-color: #666;
+    color: #fff;
+}
+
+/* ====== Tabla ====== */
+.table-wrap {
+    margin-top: 16px;
+    background: #111317;
+    border-radius: 12px;
+    padding: 12px;
+    overflow-x: auto;
+}
+
+table.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 600px;
+}
+
+table.table th {
+    background: #181a1f;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #c9c9c9;
+}
+
+table.table td {
+    padding: 8px 10px;
+    border-top: 1px solid #222;
+}
+
+.muted {
+    opacity: 0.7;
+}
+
+/* ====== Responsivo ====== */
+@media (max-width: 768px) {
+    .auth-card {
+        width: 95%;
+        margin: 0 auto;
+        padding: 16px;
+    }
+
+    table.table {
+        font-size: 0.8rem;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    select,
+    input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .table-wrap {
+        border-radius: 8px;
+        padding: 8px;
+    }
+}
+
+/* ===== Layout general ===== */
+.container-auth {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.auth-card {
+    background: #0e1014;
+    border: 1px solid #1c2026;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+/* ===== Filtros en desktop ===== */
+.form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ===== Botones ===== */
+.btn {
+    background: #1a1d23;
+    color: #e5e5e5;
+    border: 1px solid #2a2d33;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all .2s ease;
+}
+
+.btn:hover {
+    background: #23272f;
+    color: #fff;
+}
+
+.btn.primary {
+    background: #007aff;
+    border-color: #007aff;
+    color: #fff;
+}
+
+.btn.primary:hover {
+    background: #379eff;
+}
+
+.btn.success {
+    background: #00b06f;
+    border-color: #00b06f;
+    color: #fff;
+}
+
+.btn.success:hover {
+    background: #00d685;
+}
+
+.btn.danger {
+    background: #d93d3d;
+    border-color: #d93d3d;
+    color: #fff;
+}
+
+.btn.danger:hover {
+    background: #ff5555;
+}
+
+.btn.small {
+    padding: 8px 12px;
+    font-size: .85rem;
+}
+
+/* ===== Tabla (desktop) ===== */
+.table-wrap {
+    margin-top: 16px;
+    background: #111317;
+    border-radius: 12px;
+    padding: 12px;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+
+.table th {
+    background: #181a1f;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #c9c9c9;
+}
+
+.table td {
+    padding: 10px;
+    border-top: 1px solid #222;
+}
+
+.table td .actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ===== Mobile “card table” ===== */
+@media (max-width: 768px) {
+    .container-auth {
+        padding: 12px;
+    }
+
+    .auth-card {
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    /* filtros en columna y botones anchos */
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn,
+    .btn.primary {
+        width: 100%;
+    }
+
+    /* tabla -> cards */
+    .table {
+        min-width: 0;
+        border: 0;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tr {
+        display: block;
+        background: #0f1217;
+        border: 1px solid #1c2026;
+        border-radius: 12px;
+        padding: 8px;
+        margin-bottom: 12px;
+    }
+
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 6px;
+        border: 0;
+        border-top: 1px solid #1d2128;
+    }
+
+    .table td:first-child {
+        border-top: 0;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #c9c9c9;
+    }
+
+    /* acciones en dos columnas */
+    .table td .actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .table td .actions .btn {
+        width: 100%;
+    }
+}

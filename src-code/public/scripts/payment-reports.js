@@ -115,9 +115,9 @@ async function cargarRangoFormaPago(filters) {
 
     renderGroupedTable({
       groups: [{ label: `COBRANZA POR RANGO ${ini} a ${fin}`, span: 4 }],
-      columns: ['linea_producto', 'producto', 'metodo_de_pago', 'total_mxn'],
+      columns: ['linea_producto', 'producto', 'metodo_de_pago', 'total'],
       rows: data,
-      sumCols: ['total_mxn'],
+      sumCols: ['total'],
     });
   } catch (err) {
     console.error('Error /api/paymentreports/rango:', err);

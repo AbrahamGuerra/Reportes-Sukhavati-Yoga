@@ -88,7 +88,7 @@ router.post('/request-register', async (req, res) => {
     `
     await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html })
 
-    return res.json({ ok: true, message: 'REGISTER_EMAIL_SENT' })
+    return res.json({ ok: true, message: 'CORREO ENVIADO' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok: false, error: err.message })
@@ -319,7 +319,8 @@ router.post('/request-role-change', authRequired, async (req, res) => {
  */
 router.post('/resolve-role-change', authRequired, async (req,res) => {
   try {
-    if (req.user.rol !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
+    const role = String(req.user?.role || '').trim().toLowerCase();
+    if (role !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
     const { id, approve } = req.body
     if (!id) return res.status(400).json({ ok:false, error:'ID_REQUIRED' })
 
@@ -474,7 +475,7 @@ router.post('/register-resend', async (req, res) => {
     `
     await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html })
 
-    return res.json({ ok:true, message:'REGISTER_EMAIL_SENT' })
+    return res.json({ ok:true, message:'CORREO ENVIADO' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok:false, error: err.message })

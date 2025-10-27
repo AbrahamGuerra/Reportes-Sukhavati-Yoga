@@ -4,7 +4,7 @@ export async function requireAuth(allowedRols = []) {
   const token = getToken()
   if (!token) {
     const here = encodeURIComponent(location.pathname + location.search)
-    location.href = `/login.html?next=${here}`
+    location.href = `/Reportes-Sukhavati-Yoga/login.html?next=${here}`
     return null
   }
 
@@ -22,7 +22,7 @@ export async function requireAuth(allowedRols = []) {
   } catch (err) {
     console.warn('Token inválido o corrupto', err)
     clearToken()
-    location.href = '/login.html'
+    location.href = '/Reportes-Sukhavati-Yoga/login.html'
     return null
   }
 }

@@ -492,6 +492,14 @@ export function setDefaultRangeThisMonth() {
   }
 }
 
+export function dataToExport(titulo, data){
+  const productoText = document.querySelector('#filter-product')?.selectedOptions?.[0]?.text || 'Todos';
+  const subtitulo = `Producto: ${productoText}`;
+
+  window.exportRows = data;
+  window.exportMeta = { titulo, subtitulo }
+}
+
 export async function cargarConsecutivo(filters) {
   const q = buildQuery({
     fecha_inicio: filters.fecha_inicio,
@@ -502,6 +510,8 @@ export async function cargarConsecutivo(filters) {
     estado: filters.estado || undefined,
   });
   const rows = await fetchJSON(`/api/paymentreports/consecutivo${q}`);
+  const titulo = `CONSECUTIVO ${filters.fecha_inicio} a ${filters.fecha_fin}`
+  dataToExport(titulo, rows)
   const columns = [
     'id_transaccion','id_suscripcion','id_cargo',
     'nombre','apellidos','concepto','precio','descuento','estado',
@@ -568,3 +578,68 @@ export async function requestRoleChange({ role }) {
   if (!res.ok) throw new Error(json.error || json.code || res.statusText)
   return json
 }
+export async function adminListRoleRequests(status = 'pendiente') {
+  const token = getToken()
+  const res = await fetch(`/api/auth/admin/role-requests?status=${encodeURIComponent(status)}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  const json = await res.json().catch(()=> ({}))
+  if (!res.ok) throw new Error(json.error || res.statusText)
+  return json
+}
+export async function adminResolveRoleRequest({ idRequest, action, status }) {
+  const token = getToken()
+  const body = {
+    id: idRequest,
+    id_request: idRequest,
+    action,          // 'approve' | 'reject'
+    decision: action,
+    status           // 'aprobada' | 'rechazada'
+  }
+  const res = await fetch('/api/auth/resolve-role-change', {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(body)
+  })
+  const json = await res.json().catch(()=> ({}))
+  if (!res.ok) throw new Error(json.error || res.statusText)
+  return json
+}
+// === Admin: helpers para roles ===
+export async function adminListRoles() {
+  const token = getToken()
+  const res = await fetch('/api/auth/admin/roles', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || res.statusText)
+  return json // [{ id, code, name }]
+}
+export async function adminFindUserByEmail(email) {
+  const token = getToken()
+  const u = String(email || '').trim().toLowerCase()
+  const res = await fetch(`/api/auth/admin/users/find?email=${encodeURIComponent(u)}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || res.statusText)
+  return json // { id, email, name, id_role, role_code, role_name }
+}
+export async function adminGrantRole({ email, role, reason }) {
+  const token = getToken()
+  const res = await fetch('/api/auth/admin/role-grant', {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ email, role, reason })
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || res.statusText)
+  return json // { ok:true, message:'ROLE_UPDATED' }
+}
+
