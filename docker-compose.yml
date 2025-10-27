@@ -3,6 +3,8 @@ services:
     build: .
     env_file: .env
     restart: always
+    environment:
+      - PORT=3000
     expose:
       - "3000"
     healthcheck:

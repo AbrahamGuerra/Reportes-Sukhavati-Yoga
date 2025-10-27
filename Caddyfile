@@ -1,18 +1,18 @@
 madigitalmx.com, www.madigitalmx.com {
 
-    # Estáticos bajo /Reportes-Sukhavati-Yoga (sin recortar el prefijo)
+    # FRONT: carpeta /Reportes-Sukhavati-Yoga dentro de /srv/public
     handle /Reportes-Sukhavati-Yoga/* {
         root * /srv/public
         file_server
     }
 
-    # Redirige / a la subcarpeta
+    # Redirige raíz a la subcarpeta del front
     @root path /
     redir @root /Reportes-Sukhavati-Yoga/
 
-    # Proxy API
-    handle_path /api/* {
-        reverse_proxy api:3000
+    # API: NO usar handle_path para no recortar /api
+    handle /api/* {
+        reverse_proxy http://api:3000
     }
 
     encode gzip
