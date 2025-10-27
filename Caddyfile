@@ -1,39 +1,19 @@
 madigitalmx.com, www.madigitalmx.com {
 
-    # ===== Frontend bajo /Sukhavati-Yoga =====
-    handle_path /Sukhavati-Yoga/* {
+    # Estáticos bajo /Sukhavati-Yoga (sin recortar el prefijo)
+    handle /Sukhavati-Yoga/* {
         root * /srv/public
-
-        # Intentar {path}, {path}.html o {path}/index.html
-        @exists file {
-            try_files {path} {path}.html {path}/index.html
-        }
-        # Reescribe a lo que sí existe (el valor resuelto queda en {http.matchers.file.relative})
-        rewrite @exists {http.matchers.file.relative}
-
         file_server
     }
 
-    # Redirige raíz a la subcarpeta
+    # Redirige / a la subcarpeta
     @root path /
     redir @root /Sukhavati-Yoga/
 
-    # ===== Backend API =====
-    # Usa handle (NO handle_path) para NO quitar el prefijo /api
-    handle /api/* {
+    # Proxy para tu API
+    handle_path /api/* {
         reverse_proxy api:3000
     }
-
-    # (Opcional) Archivos servidos por Node en /sukhavati/users/*
-    # Si prefieres que Caddy los mande a Node:
-    handle /sukhavati/* {
-        reverse_proxy api:3000
-    }
-    # Alternativa: servirlos directo desde disco (si los montas en /srv/uploads)
-    # handle_path /sukhavati/users/* {
-    #     root * /srv/uploads
-    #     file_server
-    # }
 
     encode gzip
     header {
