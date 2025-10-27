@@ -9,7 +9,14 @@ const router = express.Router()
 router.use(cors())
 router.use(express.json())
 
-const s3 = new S3Client({ region: process.env.AWS_REGION })
+export const s3 = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-2',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    sessionToken: process.env.AWS_SESSION_TOKEN,
+  },
+})
 const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }) // 20MB
 
 // ——— helpers ———

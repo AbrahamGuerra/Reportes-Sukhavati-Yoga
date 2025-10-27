@@ -69,16 +69,22 @@ async function uploadFile(file) {
   const fd = new FormData()
   fd.append('file', file)
 
+  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
   const res = await fetch('/api/bucket/upload', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getToken?.() || ''}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
     body: fd,
   })
-  if (!res.ok) throw new Error('Error subiendo PDF')
+
+  if (!res.ok) {
+    // log detallado
+    const text = await res.text().catch(() => '')
+    console.error('Upload error →', res.status, text)
+    throw new Error(`Error subiendo PDF (${res.status})`)
+  }
   return res.json() // { url, key }
 }
+
 
 async function updateEvidencia(idTransaccion, url) {
   const res = await fetch(`/api/bucket/payments/${encodeURIComponent(idTransaccion)}/evidencia`, {
