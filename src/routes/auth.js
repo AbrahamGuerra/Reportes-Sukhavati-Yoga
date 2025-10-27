@@ -338,37 +338,97 @@ router.get('/admin/role-requests', authRequired, async (req,res) => {
 /**
  * 8) Aprobar/Rechazar cambio de rol (requiere rol admin – aquí lo validamos vía JWT)
  */
-router.post('/resolve-role-change', authRequired, async (req,res) => {
+router.post('/resolve-role-change', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').trim().toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok: false, error: 'FORBIDDEN' });
+
+  const { id, action } = req.body;
+  if (!id) return res.status(400).json({ ok: false, error: 'ID_REQUIRED' });
+
+  // Normaliza booleanos del front
+  const approveBool =
+    typeof action === 'boolean'
+      ? action
+      : String(action).toLowerCase() === 'approve' || String(action).toLowerCase() === 'true';
+
   try {
-    const role = String(req.user?.role || '').trim().toLowerCase();
-    if (role !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
-    const { id, approve } = req.body
-    if (!id) return res.status(400).json({ ok:false, error:'ID_REQUIRED' })
-
-    const { rows } = await query(
-      `SELECT scr.id_user, scr.id_requested_role, r.code AS code_role
-       FROM reportes_sukhavati.requests_change_role scr
-       JOIN reportes_sukhavati.roles r ON r.id = scr.id_requested_role
-       WHERE scr.id=$1 AND scr.status='pendiente'`,
+    // Valida que exista la solicitud y esté pendiente
+    const { rows: reqRows } = await query(
+      `SELECT id, id_user, id_requested_role
+         FROM reportes_sukhavati.requests_change_role
+        WHERE id = $1 AND status = 'pendiente'`,
       [id]
-    )
-    if (!rows.length) return res.status(404).json({ ok:false, error:'REQUEST_NOT_FOUND' })
-
-    await query('BEGIN')
-    if (approve) {
-      await query(`UPDATE reportes_sukhavati.users SET id_role=$1, updated_in=now() WHERE id=$2`, [rows[0].id_requested_role, rows[0].id_user])
-      await query(`UPDATE reportes_sukhavati.requests_change_role SET status='aprobada', solved_in=now(), solved_by_id=$1 WHERE id=$2`, [req.user.id, id])
-    } else {
-      await query(`UPDATE reportes_sukhavati.requests_change_role SET status='rechazada', solved_in=now(), solved_by_id=$1 WHERE id=$2`, [req.user.id, id])
+    );
+    
+    if (!reqRows.length) {
+      return res.status(404).json({ ok: false, error: 'REQUEST_NOT_FOUND' });
     }
-    await query('COMMIT')
-    return res.json({ ok:true })
+
+    let affectedUser = 0;
+
+    if (approveBool) {
+      // Actualiza id_role del usuario usando UPDATE ... FROM
+      const upUser = await query(
+        `UPDATE reportes_sukhavati.users AS u
+            SET id_role = rcr.id_requested_role
+           FROM reportes_sukhavati.requests_change_role AS rcr
+          WHERE rcr.id = $1
+            AND rcr.status = 'pendiente'
+            AND u.id = rcr.id_user`,
+        [id]
+      );
+      affectedUser = upUser.rowCount;
+
+      // Marca la solicitud como aprobada
+      await query(
+        `UPDATE reportes_sukhavati.requests_change_role
+            SET status = 'aprobada',
+                solved_in = now(),
+                solved_by_id = $1
+          WHERE id = $2`,
+        [req.user.id, id]
+      );
+
+      // Si no encontró usuario, revierte
+      if (affectedUser === 0) {
+        return res.status(409).json({
+          ok: false,
+          error: 'USER_NOT_UPDATED',
+          detail: 'No se encontró el usuario vinculado a la solicitud.'
+        });
+      }
+    } else {
+      // Rechazo
+      await query(
+        `UPDATE reportes_sukhavati.requests_change_role
+            SET status = 'rechazada',
+                solved_in = now(),
+                solved_by_id = $1
+          WHERE id = $2`,
+        [req.user.id, id]
+      );
+    }
+
+    // Consulta final para verificar rol actualizado
+    const { rows: userNow } = await query(
+      `SELECT u.id, u.id_role
+         FROM reportes_sukhavati.users u
+         JOIN reportes_sukhavati.requests_change_role rcr ON rcr.id_user = u.id
+        WHERE rcr.id = $1`,
+      [id]
+    );
+
+    return res.json({
+      ok: true,
+      affected_user_rows: affectedUser,
+      user_after: userNow[0] || null
+    });
   } catch (err) {
-    await query('ROLLBACK').catch(()=>{})
     console.error(err)
     return res.status(500).json({ ok:false, error: err.message })
   }
-})
+});
+
 
 /**
  * 9) Registro completado

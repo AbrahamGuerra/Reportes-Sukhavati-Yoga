@@ -1,3 +1,4 @@
+import { requireAuth } from './guard.js'
 import {
   adminListRoles,
   adminFindUserByEmail,
@@ -5,6 +6,16 @@ import {
   adminListRoleRequests,
   adminResolveRoleRequest
 } from './api.js'
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth(['admin'])
+  if (!user) return
+  
+  const warningBox = document.getElementById('editor-warning')
+  if (String(user.role || '').trim().toLowerCase() !== 'admin') {
+    warningBox.style.display = 'block'
+  }
+})
 
 const $ = s => document.querySelector(s)
 const put = (s, t = '') => { const el = $(s); if (el) el.textContent = t }
@@ -29,7 +40,7 @@ async function loadRoles() {
   }
 }
 
-// 👤 Muestra info del usuario buscado
+// Muestra info del usuario buscado
 function showUser(u) {
   const box = $('#user-box')
   if (!u) {
@@ -45,7 +56,7 @@ function showUser(u) {
   $('#sel-role').value = u.role_code
 }
 
-// 🔍 Buscar usuario por correo
+// Buscar usuario por correo
 $('#btn-find')?.addEventListener('click', async () => {
   put('#msg', '')
   try {
@@ -61,7 +72,7 @@ $('#btn-find')?.addEventListener('click', async () => {
   }
 })
 
-// 🔁 Aplicar cambio de rol manual
+// Aplicar cambio de rol manual
 $('#btn-apply')?.addEventListener('click', async () => {
   put('#msg', '')
   try {
@@ -118,7 +129,7 @@ async function loadReqs() {
   }
 }
 
-// 🎯 Delegación de eventos para aprobar/rechazar
+// Delegación de eventos para aprobar/rechazar
 $('#tb-reqs')?.addEventListener('click', async (ev) => {
   const btn = ev.target.closest('button[data-act]')
   if (!btn) return
@@ -137,7 +148,6 @@ $('#tb-reqs')?.addEventListener('click', async (ev) => {
 $('#btn-reload-reqs')?.addEventListener('click', loadReqs)
 $('#sel-req-status')?.addEventListener('change', loadReqs)
 
-// 🚀 Inicialización
 window.addEventListener('DOMContentLoaded', () => {
   loadRoles()
   loadReqs()

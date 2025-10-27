@@ -47,7 +47,7 @@ btn.addEventListener('click', async () => {
     msgEl.textContent = '¡Cuenta activada con éxito! Ya puedes iniciar sesión.'
     btn.textContent = 'Completado'
     setTimeout(() => {
-      location.href = '/login.html'
+      location.href = 'index.html'
     }, 2000)
   } catch (err) {
     msgEl.style.color = '#ef4444'

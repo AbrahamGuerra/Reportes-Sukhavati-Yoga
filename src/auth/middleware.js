@@ -15,7 +15,6 @@ export function authRequired(req, res, next) {
     req.user = decoded
     next()
   } catch (err) {
-    console.error('JWT error:', err.message)
     return res.status(403).json({ ok: false, error: 'INVALID_TOKEN' })
   }
 }

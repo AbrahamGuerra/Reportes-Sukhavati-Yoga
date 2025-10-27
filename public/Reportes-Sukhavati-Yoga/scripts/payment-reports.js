@@ -1,5 +1,12 @@
+import { requireAuth } from './guard.js'
 import * as XLSX from "https://esm.sh/xlsx";
-import { initFilters, loadproductsSelect, loadEstadosSelect, loadFormaPagoSelect, getFilterValues, toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
+import { initFilters, loadproductsSelect, loadEstadosSelect, loadFormaPagoSelect, getFilterValues, 
+  toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth(['admin', 'editor', 'views'])
+  if (!user) return
+})
 
 window.addEventListener('DOMContentLoaded', () => {
   const nav = document.getElementById('report-nav');

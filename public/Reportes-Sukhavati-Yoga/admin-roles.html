@@ -12,52 +12,52 @@
 </head>
 
 <body>
-    <div id="menu" class="menu">
-        <h1>Solicitudes pendientes</h1>
-        <p id="user-info" class="muted"></p>
-        <div class="menu-top">
-            <label>
-                FILTRAR
-                <select id="sel-req-status">
-                    <option value="pendiente">Pendiente</option>
-                    <option value="aprobada">Aprobada</option>
-                    <option value="rechazada">Rechazada</option>
-                </select>
-            </label>
-            <button class="btn" id="btn-reload-reqs">Actualizar</button>
-        </div>
+    <main class="container">
+        <div class="card payment-reports-container">
+            <h1>Solicitudes de cambio de rol</h1>
+            <p class="muted">Administra las solicitudes de cambio de rol de los usuarios.</p>
 
-        <div class="divider"></div>
+            <div class="page-wrap">
+                <section id="filters" class="filters">
+                    <div class="row">
+                        <label class="filter-item">ESTADO
+                            <select id="sel-req-status">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="aprobada">Aprobada</option>
+                                <option value="rechazada">Rechazada</option>
+                            </select>
+                        </label>
+                        <button class="btn" id="btn-reload-reqs">Actualizar</button>
+                    </div>
+                </section>
 
-        <div class="table-area">
-            <div class="table-scroll">
-                <table id="table-payment-reports">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Correo</th>
-                            <th>Rol solicitado</th>
-                            <th>Motivo</th>
-                            <th>Estado</th>
-                            <th style="min-width:180px">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tb-reqs"></tbody>
-                </table>
+                <div class="table-area">
+                    <div class="table-scroll">
+                        <table id="table-payment-reports">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Correo</th>
+                                    <th>Rol solicitado</th>
+                                    <th>Motivo</th>
+                                    <th>Estado</th>
+                                    <th style="min-width:180px">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb-reqs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="reports-actions">
+                    <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
+                </div>
             </div>
         </div>
-        
-        <div class="reports-actions">
-            <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
-        </div>
-    </div>
+    </main>
 
-    <script type="module" src="./scripts/guard.js"></script>
     <script type="module" src="./scripts/admin-roles.js"></script>
-
-    <div id="app-modals"></div>
-    <script type="module" src="./scripts/ui/modal.js"></script>
 </body>
 
 </html>
