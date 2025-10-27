@@ -1,14 +1,14 @@
 madigitalmx.com, www.madigitalmx.com {
 
-    # Estáticos bajo /Sukhavati-Yoga (sin recortar el prefijo)
-    handle /Sukhavati-Yoga/* {
+    # Estáticos bajo /Reportes-Sukhavati-Yoga (sin recortar el prefijo)
+    handle /Reportes-Sukhavati-Yoga/* {
         root * /srv/public
         file_server
     }
 
     # Redirige / a la subcarpeta
     @root path /
-    redir @root /Sukhavati-Yoga/
+    redir @root /Reportes-Sukhavati-Yoga/
 
     # Proxy API
     handle_path /api/* {
