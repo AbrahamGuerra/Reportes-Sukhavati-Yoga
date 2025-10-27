@@ -64,7 +64,7 @@ document.getElementById('btn-logout')?.addEventListener('click', () => {
 document.getElementById('btn-request-role')?.addEventListener('click', async () => {
   const data = await formModal({
     title: 'Solicitar cambio de rol',
-    message: 'Indica el rol al que deseas cambiarte (por ejemplo: "editor" o "admin").',
+    message: 'Indica el rol al que deseas cambiarte (por ejemplo: "editor").',
     fields: [
       { name: 'role', label: 'Rol solicitado', required: true, placeholder: 'editor' },
       { name: 'reason', label: 'Motivo (opcional)', placeholder: '¿Por qué necesitas el cambio?' },
