@@ -418,6 +418,19 @@ router.post('/resolve-role-change', authRequired, async (req, res) => {
       [id]
     );
 
+    try {
+      const subject = 'Sukhavati | Cambio de rol'
+      const message = approveBool
+        ? `<p>Tu cambio de rol fue <strong>aprobado</strong>. ¡Ya puedes disfrutar de tus nuevos permisos!</p>`
+        : `<p>Tu cambio de rol <strong>no fue aprobado</strong>. Si crees que se trata de un error, puedes comunicarte con el administrador.</p>`
+
+      await sendMail({
+        to: user.email,
+        subject,
+        html: message,
+      })
+    } catch (_) {}
+
     return res.json({
       ok: true,
       affected_user_rows: affectedUser,

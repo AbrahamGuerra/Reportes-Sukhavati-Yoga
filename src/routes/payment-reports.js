@@ -225,7 +225,6 @@ router.get('/consecutivo', async (req, res) => {
     if (!iniParam || !finParam) {
       return res.status(400).json({ ok: false, error: 'Debes enviar fecha_inicio y fecha_fin (YYYY-MM-DD)' });
     }
-
     const sql = `
       SELECT *
       FROM reportes_sukhavati.fn_rpt_cobranza_detalle_rango($1, $2, $3, $4, $5, $6)
@@ -244,8 +243,9 @@ router.get('/consecutivo', async (req, res) => {
 router.get('/products', async (req, res) => {
   try {
     const sql = `
-      SELECT producto
-      FROM reportes_sukhavati.productos
+      SELECT DISTINCT
+        producto AS producto
+      FROM reportes_sukhavati.pagos
       WHERE producto IS NOT NULL
       ORDER BY producto;
     `
