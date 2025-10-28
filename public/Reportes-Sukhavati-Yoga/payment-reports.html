@@ -13,8 +13,9 @@
 <body>
     <main class="container">
         <div class="card payment-reports-container">
-            <h1>Reportes de pagos</h1>
-            <p class="muted">Consulta los pagos agrupados por periodo y forma de pago.</p>
+            <h1>Reportes</h1>
+            <p class="muted">Consulta los pagos registrados y el número de clases utilizadas o disponibles por suscripción, agrupados por periodo,
+            método de pago y plan</p>
             <nav id="report-nav">
                 <button id="btn-consecutive" class="btn primary" data-mode="consecutive">Consecutivo</button>
                 <!-- 
@@ -22,6 +23,8 @@
                 <button id="btn-weekly" class="btn" data-mode="weekly">Semanal</button>
                 <button id="btn-fortnightly" class="btn" data-mode="fortnightly">Quincenal</button> -->
                 <button id="btn-range" class="btn" data-mode="range">Forma de pago</button>
+                <button id="btn-subscription-payments" class="btn" data-mode="subscriptionpayments">Pagos por suscripcion</button>
+                <button id="btn-subscription-classes" class="btn" data-mode="subscriptionclasses">Clases por suscripcion</button>
             </nav>
             <div class="page-wrap">
                 <section id="filters" class="filters">
@@ -61,6 +64,11 @@
                         </label>
                         <label class="filter-item">PRODUCTO
                             <select id="filter-product">
+                                <option value="">Todos</option>
+                            </select>
+                        </label>
+                        <label class="filter-item">SOCIO
+                            <select id="filter-partner">
                                 <option value="">Todos</option>
                             </select>
                         </label>

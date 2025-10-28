@@ -1,6 +1,6 @@
 import { requireAuth } from './guard.js'
 import * as XLSX from "https://esm.sh/xlsx";
-import { initFilters, loadproductsSelect, loadEstadosSelect, loadFormaPagoSelect, getFilterValues, 
+import { initFilters, loadProductsSelect, loadEstadosSelect, loadFormaPagoSelect, loadSocios, getFilterValues, 
   toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,24 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return
 })
 
-window.addEventListener('DOMContentLoaded', () => {
-  const nav = document.getElementById('report-nav');
-  if (!nav) {
-    console.warn('⚠️ No se encontró #report-nav en el DOM');
-    return;
-  }
-
-  nav.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.btn');
-    if (!btn || !nav.contains(btn)) return;
-
-    nav.querySelectorAll('.btn').forEach(b => b.classList.remove('primary'));
-    btn.classList.add('primary');
-
-    active = btn.id.replace('btn-', '');
-    await loadActive();
-  });
-});
 
 function showLoading(cols = 6) {
   let tbody = document.querySelector('#table-payment-reports tbody');
@@ -51,6 +33,14 @@ function togglePaymentMethodVisibility(show) {
   if (!box) return;
 
   const label = box.closest('label'); // obtiene el label contenedor
+  if (label) label.classList.toggle('hidden', !show);
+}
+
+function togglePartnerVisibility(show) {
+  const box = document.getElementById('filter-partner');
+  if (!box) return;
+
+  const label = box.closest('label');
   if (label) label.classList.toggle('hidden', !show);
 }
 
@@ -95,6 +85,66 @@ async function cargarQuincenalFormaPago(filters) {
     sumCols: ['monto'],
   });
 }
+
+async function cargarPagosVsPlan(filters) {
+  const q = buildQuery({
+    fecha_inicio: filters.fecha_inicio,
+    fecha_fin:    filters.fecha_fin,
+    producto:     filters.producto || undefined,
+    socio:  filters.socio || undefined,
+  });
+  
+  const data = await fetchJSON(`/api/paymentreports/subscription-payments${q}`);
+  const titulo = `PAGOS vs PLAN ${filters.fecha_inicio} a ${filters.fecha_fin}`;
+  dataToExport(titulo, data);
+
+  // columnas que muestra bien el comparativo
+  const columns = [
+    'id_suscripcion',
+    'socio',
+    'producto',
+    'metodo_de_pago','periodicidad','sesiones_disponibles_txt',
+    'plan_llevados','plan_totales',
+    'pagos_exitosos',
+    'monto_pagado','precio_total','saldo_restante'
+  ];
+
+  renderGroupedTable({
+    groups: [{ label: titulo, span: 7 }],
+    columns,
+    rows: data,
+    sumCols: ['monto_pagado','precio_total','saldo_restante'],
+  });
+}
+
+async function cargarClasesPorSuscripcion(filters) {
+  const q = buildQuery({
+    fecha_inicio: filters.fecha_inicio,
+    fecha_fin:    filters.fecha_fin,
+    producto:     filters.producto || undefined,
+    socio:  filters.socio || undefined,
+  });
+  const rows = await fetchJSON(`/api/paymentreports/subscription-classes${q}`);
+  const titulo = `CLASES por SUSCRIPCIÓN ${filters.fecha_inicio} a ${filters.fecha_fin}`;
+  dataToExport(titulo, rows);
+
+  const columns = [
+    'id_suscripcion',
+    'socio',
+    'producto',
+    'clases_tomadas','clases_totales_plan','clases_restantes'
+  ];
+
+  // Para evitar que "clases_totales_plan" se formatee como dinero,
+  // NO pedimos sumatoria y dejamos los enteros tal cual.
+  renderGroupedTable({
+    groups: [{ label: titulo, span: 4 }],
+    columns,
+    rows,
+    sumCols: [], // sin totales
+  });
+}
+
 
 async function cargarRangoFormaPago(filters) {
   const tbody = document.querySelector('#table-payment-reports tbody');
@@ -149,21 +199,20 @@ async function cargarRangoFormaPago(filters) {
 
 async function loadActive() {
   showLoading();
-
   if (active === 'consecutive') {
     toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
     toggleRangeVisibility(true);
     togglePaymentMethodVisibility(true);
+    togglePartnerVisibility(false);
     setDefaultWeekIfEmpty();            
     const filters = getFilterValues();    
     await cargarConsecutivo(filters);
-    updateExportVisibility(document.querySelector('#table-payment-reports tbody'));
-    return;
   }
 
   if (active === 'monthly') {
     toggleRangeVisibility(false);
     togglePaymentMethodVisibility(false);
+    togglePartnerVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: true, showQuincena: false, showWeek: false });
     const filters = getFilterValues();
     await cargarMensualFormaPago(filters);
@@ -172,6 +221,7 @@ async function loadActive() {
   if (active === 'weekly') {
     toggleRangeVisibility(false);
     togglePaymentMethodVisibility(false);
+    togglePartnerVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: false, showWeek: true, showQuincena: false });
     const filters = getFilterValues();
     await cargarSemanalFormaPago(filters);
@@ -180,6 +230,7 @@ async function loadActive() {
   if (active === 'fortnightly') {
     toggleRangeVisibility(false);
     togglePaymentMethodVisibility(false);
+    togglePartnerVisibility(false);
     toggleFilterVisibility({ showYear: true, showMonth: true, showWeek: false, showQuincena: true });
     const filters = getFilterValues();
     await cargarQuincenalFormaPago(filters);
@@ -188,6 +239,7 @@ async function loadActive() {
   if (active === 'range') {
     toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
     toggleRangeVisibility(true);
+    togglePartnerVisibility(false);
     togglePaymentMethodVisibility(false);
     const ini = document.getElementById('filter-start-date')?.value;
     const fin = document.getElementById('filter-end-date')?.value;
@@ -200,8 +252,33 @@ async function loadActive() {
     await cargarRangoFormaPago(filters);
   }
 
+  if (active === 'subscriptionpayments') {
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
+    toggleRangeVisibility(true);
+    togglePartnerVisibility(true);
+    togglePaymentMethodVisibility(false);
+    const filters = getFilterValues();
+    await cargarPagosVsPlan(filters);
+  }
+
+  if (active === 'subscriptionclasses') {
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showQuincena: false });
+    toggleRangeVisibility(true);
+    togglePartnerVisibility(true);
+    togglePaymentMethodVisibility(false);
+    const filters = getFilterValues();
+    await cargarClasesPorSuscripcion(filters);
+  }
+
   updateExportVisibility(document.querySelector('#table-payment-reports tbody'));
 }
+
+document.getElementById('btn-consecutive')?.addEventListener('click', async (e) => {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('primary'));
+  e.target.classList.add('primary');
+  active = 'consecutive';
+  await loadActive();
+});
 
 document.getElementById('btn-monthly')?.addEventListener('click', async (e) => {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('primary'));
@@ -231,8 +308,22 @@ document.getElementById('btn-range')?.addEventListener('click', async (e) => {
   await loadActive();
 });
 
+document.getElementById('btn-subscription-payments')?.addEventListener('click', async (e) => {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('primary'));
+  e.target.classList.add('primary');
+  active = 'subscriptionpayments';
+  await loadActive();
+});
+
+document.getElementById('btn-subscription-classes')?.addEventListener('click', async (e) => {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('primary'));
+  e.target.classList.add('primary');
+  active = 'subscriptionclasses';
+  await loadActive();
+});
+
 ['filter-year','filter-monthly','filter-fortnightly','filter-weekly','filter-product','filter-start-date',
-  'filter-end-date','filter-segment','filter-status','filter-payment-method'].forEach(id => {
+  'filter-end-date','filter-segment','filter-status','filter-payment-method', 'filter-partner'].forEach(id => {
   document.getElementById(id)?.addEventListener('change', loadActive);
 });
 
@@ -369,7 +460,8 @@ function setDefaultWeekIfEmpty() {
 // carga inicial
 initFilters();
 loadEstadosSelect();
-loadproductsSelect();
+loadProductsSelect();
 loadFormaPagoSelect();
+loadSocios();
 loadActive();
 

@@ -14,6 +14,7 @@ const selFechaFin  = () => document.getElementById('filter-end-date');
 const selSegmen  = () => document.getElementById('filter-segment');
 const selEstado  = () => document.getElementById('filter-status');
 const selMetodoPago = () => document.getElementById('filter-payment-method');
+const selPartner      = () => document.getElementById('filter-partner');
 
 const rangeBox     = () => document.getElementById('filters-range');
 const btnMonthly   = () => document.getElementById('btn-monthly');
@@ -21,6 +22,33 @@ const btnWeekly   = () => document.getElementById('btn-weekly');
 const btnFortnightly = () => document.getElementById('btn-fortnightly');
 const btnRange     = () => document.getElementById('btn-range') || document.getElementById('btnRange');
 const btnConsecutive = () => document.getElementById('btn-consecutive');
+const btnSubPayments = () => document.getElementById('btn-subscription-payments');
+const btnSubClassess = () => document.getElementById('btn-subscription-classes');
+
+export function buildQuery(params = {}) {
+  const sp = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '') continue
+    sp.set(k, v)
+  }
+  const s = sp.toString()
+  return s ? `?${s}` : ''
+}
+
+export const fmt = new Intl.NumberFormat('es-MX', {
+  style: 'currency',
+  currency: 'MXN',
+  maximumFractionDigits: 2,
+})
+
+export function coerceNumber(v) {
+  if (v === null || v === undefined) return null
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  // tolerante si llega como "1,234.00" del backend (idealmente no debería)
+  const s = String(v).trim().replace(/[^\d.-]/g, '')
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
 
 // --- Estado de tabla/paginación ---
 const tableState = {
@@ -109,6 +137,8 @@ export const PeriodMode = {
   fortnightly: 'fortnightly',
   range:     'range',
   consecutive: 'consecutive',
+  subPayments: 'subscriptionpayments',
+  subClassess: 'subscriptionclasses'
 };
 
 let currentMode = PeriodMode.consecutive;
@@ -158,6 +188,8 @@ export function initPeriodoSwitch() {
     [btnWeekly(),   PeriodMode.weekly],
     [btnFortnightly(), PeriodMode.fortnightly],
     [btnRange(),     PeriodMode.range],
+    [btnSubPayments(),     PeriodMode.subPayments],
+    [btnSubClassess(),     PeriodMode.subClassess],
   ];
 
   mapping.forEach(([btn, mode]) => {
@@ -189,7 +221,13 @@ function setMode(mode) {
   } else if (mode === PeriodMode.fortnightly) {
     toggleFilterVisibility({ showYear: true, showMonth: true,  showWeek: false, showFortnightly: true  });
     showRangeSection(false);
-  } else { 
+  } else if (mode === PeriodMode.fortnightly) {
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showFortnightly: false });
+    showRangeSection(true);
+  } else if (mode === PeriodMode.subscriptionpayments) {
+    toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showFortnightly: false });
+    showRangeSection(true);
+  } else if (mode === PeriodMode.subscriptionclasses) {
     toggleFilterVisibility({ showYear: false, showMonth: false, showWeek: false, showFortnightly: false });
     showRangeSection(true);
   }
@@ -211,9 +249,11 @@ export function getFilterValues() {
     segmento: selSegmen()?.value || undefined,
     estado: selEstado()?.value || undefined,
     metodo: selMetodoPago()?.value || undefined,
+    socio: selPartner()?.value || undefined,
   };
 
-  if (base.mode === PeriodMode.consecutive || base.mode === PeriodMode.range) {
+  if (base.mode === PeriodMode.consecutive || base.mode === PeriodMode.range 
+    || base.mode === PeriodMode.subPayments || base.mode === PeriodMode.subClassess ) {
     const ini = selFechaIni()?.value || '';
     const fin = selFechaFin()?.value || '';
     if (!ini || !fin) throw new Error('Selecciona Fecha inicio y Fecha fin');
@@ -224,22 +264,6 @@ export function getFilterValues() {
   }
 
   return base;
-}
-
-export function buildQuery(params) {
-  const q = new URLSearchParams();
-  Object.entries(params).forEach(([k,v]) => {
-    if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
-  });
-  const s = q.toString();
-  return s ? `?${s}` : '';
-}
-
-function coerceNumber(v){
-  if(typeof v==='number') return v;
-  if(typeof v==='string' && v.trim()!=='' && !isNaN(Number(v.replace(/,/g,''))))
-    return Number(v.replace(/,/g,''));
-  return v;
 }
 
 // --- Helpers dinámicos ---
@@ -333,14 +357,15 @@ function renderTableBodyPage() {
   const end   = start + pageSize;
   const slice = rows.slice(start, end);
 
-  const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-
   for (const r of slice) {
     const tr = document.createElement('tr');
     for (const col of columns) {
       const td = document.createElement('td');
       let val = r[col];
-      if (/monto|total(_mxn)?|total_linea|total_monthly|precio|descuento/i.test(col)) {
+      const moneyCols = new Set([
+        'monto','total','total_mxn','total_linea','total_monthly','precio','descuento'
+      ]);
+      if (moneyCols.has(col)) {
         const n = coerceNumber(val);
         td.textContent = (typeof n === 'number') ? fmt.format(n) : (val ?? '');
       } else {
@@ -451,7 +476,7 @@ export async function loadEstadosSelect({ preserve = true } = {}) {
   }
 }
 
-export async function loadproductsSelect({ preserve = true } = {}) {
+export async function loadProductsSelect({ preserve = true } = {}) {
   const sel = document.getElementById('filter-product');
   if (!sel) return;
 
@@ -505,6 +530,18 @@ export async function loadFormaPagoSelect({ preserve = true } = {}) {
     console.error('Error cargando formas de pago:', err);
     if (!sel.options.length) sel.appendChild(new Option('Todos', ''));
   }
+}
+
+export async function loadSocios() {
+  const socios = await fetchJSON('/api/paymentreports/socios');
+  const sel = document.getElementById('filter-partner');
+  sel.innerHTML = '<option value="">Todos</option>';
+  socios.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.socio;
+    opt.textContent = s.socio;
+    sel.appendChild(opt);
+  });
 }
 
 export function setDefaultRangeThisMonth() {

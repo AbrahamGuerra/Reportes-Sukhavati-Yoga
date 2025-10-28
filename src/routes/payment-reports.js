@@ -292,4 +292,67 @@ router.get('/formapago', async (req, res) => {
   }
 });
 
+// 12) Pagos vs Plan por suscripción
+//    -> reportes_sukhavati.fn_rpt_pagos_vs_plan(p_ini, p_fin, p_socio_pattern, p_producto_pattern)
+router.get('/subscription-payments', async (req, res) => {
+  try {
+    const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
+    const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD
+    const socio    = toLikeOrNull(req.query.socio);                    // opcional
+    const producto = toLikeOrNull(req.query.producto);                 // opcional
+
+    const sql = `
+      SELECT *
+      FROM reportes_sukhavati.fn_rpt_pagos_vs_plan($1,$2,$3,$4)
+      ORDER BY socio, producto;
+    `;
+    const { rows } = await query(sql, [iniParam, finParam, socio, producto]);
+    res.json(rows);
+  } catch (err) {
+    handleError(res, err, 'subscription-payments');
+  }
+});
+
+// 13) Clases por suscripción
+//    -> reportes_sukhavati.fn_rpt_clases_por_suscripcion(p_ini, p_fin, p_socio_pattern, p_producto_pattern)
+router.get('/subscription-classes', async (req, res) => {
+  try {
+    const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
+    const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD
+    const socio    = toLikeOrNull(req.query.socio);                    // opcional
+    const producto = toLikeOrNull(req.query.producto);                 // opcional
+
+    const sql = `
+      SELECT *
+      FROM reportes_sukhavati.fn_rpt_clases_por_suscripcion($1,$2,$3,$4)
+      ORDER BY socio, producto;
+    `;
+    const { rows } = await query(sql, [iniParam, finParam, socio, producto]);
+    res.json(rows);
+  } catch (err) {
+    handleError(res, err, 'subscription-classes');
+  }
+});
+
+/* =======================================
+ * 14) Catálogo de Socios
+ * =======================================*/
+router.get('/socios', async (req, res) => {
+  try {
+    const sql = `
+      SELECT
+        id_socio,
+        INITCAP(LOWER(btrim(socio))) AS socio
+      FROM reportes_sukhavati.socios
+      WHERE socio IS NOT NULL
+        AND btrim(socio) <> ''
+      ORDER BY socio;
+    `;
+    const { rows } = await query(sql);
+    res.json(rows);
+  } catch (err) {
+    handleError(res, err, 'socios');
+  }
+});
+
 export default router

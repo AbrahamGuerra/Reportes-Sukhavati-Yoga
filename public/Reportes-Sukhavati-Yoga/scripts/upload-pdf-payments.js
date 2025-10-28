@@ -1,5 +1,5 @@
 import { requireAuth } from './guard.js'
-import { loadproductsSelect, buildQuery, fetchJSON, getToken } from './api.js'
+import { loadProductsSelect, buildQuery, fetchJSON, getToken } from './api.js'
 import { toast } from './ui/modal.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -37,8 +37,8 @@ function getFilters() {
     fin = new Date(fin).toISOString().slice(0, 10)
 
     return {
-      idCargo: document.querySelector('#filtro-id-charge')?.value?.trim() || '',
-      socio: document.querySelector('#filtro-partner')?.value?.trim() || '',
+      idCargo: document.querySelector('#filter-id-charge')?.value?.trim() || '',
+      socio: document.querySelector('#filter-partner')?.value?.trim() || '',
       producto: document.querySelector('#filter-product')?.value?.trim() || '',
       notas: document.querySelector('#filter-notes')?.value?.trim() || '',
       idTransaccion: document.querySelector('#filter-id-transaction')?.value?.trim() || '',
@@ -50,8 +50,8 @@ function getFilters() {
   }
 
   return {
-    idCargo: document.querySelector('#filtro-id-charge')?.value?.trim() || '',
-    socio: document.querySelector('#filtro-partner')?.value?.trim() || '',
+    idCargo: document.querySelector('#filter-id-charge')?.value?.trim() || '',
+    socio: document.querySelector('#filter-partner')?.value?.trim() || '',
     producto: document.querySelector('#filter-product')?.value?.trim() || '',
     notas: document.querySelector('#filter-notes')?.value?.trim() || '',
     idTransaccion: document.querySelector('#filter-id-transaction')?.value?.trim() || '',
@@ -175,8 +175,8 @@ async function buscar() {
 
 function limpiar() {
   ;[
-    '#filtro-id-charge',
-    '#filtro-partner',
+    '#filter-id-charge',
+    '#filter-partner',
     '#filter-product',
     '#filter-notes',
     '#filter-id-transaction',
@@ -190,7 +190,7 @@ function limpiar() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  loadproductsSelect?.()
+  loadProductsSelect?.()
 
   document.querySelector('#btn-search')?.addEventListener('click', buscar)
   document.querySelector('#btn-clean')?.addEventListener('click', limpiar)
