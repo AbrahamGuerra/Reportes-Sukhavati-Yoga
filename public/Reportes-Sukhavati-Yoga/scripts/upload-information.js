@@ -105,6 +105,16 @@ const IMPORT_INFO = {
       { label: 'Trainingym Manager · Histórico',        href: 'https://app.tgmanager.com/payments/historical' }
     ]
   },
+
+  payments_template: {
+    title: 'Pagos (plantilla BD)',
+    templates: [
+      { label: 'Plantilla Pagos.xlsx', href: '/assets/templates/Plantilla_Pagos.xlsx' }
+    ],
+    examples: [
+    ],
+    sourceUrls: []
+  },
 };
 
 function resetFileUI(placeholderText) {

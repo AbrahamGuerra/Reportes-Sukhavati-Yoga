@@ -53,7 +53,7 @@ router.get('/payments', async (req, res) => {
 
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const sql = `
-    SELECT fecha_de_registro, socio, producto, concepto, metodo_de_pago, total,
+    SELECT socio, producto, concepto, metodo_de_pago, notas, fecha_de_registro, total,
            id_cargo, id_transaccion, id_suscripcion, evidencia_pago_url
     FROM reportes_sukhavati.pagos
     ${whereSql}

@@ -5,7 +5,7 @@ import { upsertCouponsFromXlsx } from '../mappers/coupons.js'
 import { upsertProductsFromXlsx } from '../mappers/products.js'
 import { upsertSubscriptionsFromXlsx } from '../mappers/subscriptions.js'
 import { upsertActivitiesFromXlsx } from '../mappers/activities.js'
-import { mergeAndUpsertpayments } from '../mappers/payments.js'
+import { mergeAndUpsertpayments, upsertPaymentsFromTemplateXlsx } from '../mappers/payments.js'
 import { authRequired } from '../auth/middleware.js'
 
 const router = express.Router()
@@ -66,6 +66,13 @@ router.post('/upload', authRequired, uploadAny, async (req, res) => {
           return mergeAndUpsertpayments(fileA, fileB, { schema, role });
         },
         successMessage: 'Pagos actualizados correctamente',
+      },
+      payments_template: {
+        filesRequired: 1,
+        run: async (files) => {
+          return upsertPaymentsFromTemplateXlsx(files[0].buffer, { schema, role });
+        },
+        successMessage: 'Pagos (Plantilla Base de datos) actualizados correctamente',
       },
     };
 

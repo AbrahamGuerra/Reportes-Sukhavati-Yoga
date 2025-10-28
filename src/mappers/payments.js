@@ -7,6 +7,92 @@ import { filterLastNDays } from '../utils/utils.js'
 
 dayjs.extend(customParseFormat)
 
+function toISODateString(d) {
+  if (!(d instanceof Date)) return String(d ?? '');
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// --- Parsers robustos de fecha y hora ---
+function parseExcelSerialDate(n) {
+  // Excel serial date (con base 1899-12-30)
+  const base = new Date(Date.UTC(1899, 11, 30));
+  const ms = Math.round(Number(n)) * 24 * 60 * 60 * 1000;
+  return new Date(base.getTime() + ms);
+}
+
+function parseDateStringFlexible(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+
+  // ISO yyyy-mm-dd
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+  let m = iso.exec(str);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    return new Date(y, mo - 1, d);
+  }
+
+  // dd/mm/yy|yyyy o mm/dd/yy|yyyy -> detectamos por rango
+  const sl = /^(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})$/;
+  m = sl.exec(str);
+  if (m) {
+    let a = Number(m[1]), b = Number(m[2]), c = Number(m[3]);
+    // normaliza año de 2 dígitos
+    if (c < 100) c += 2000;
+
+    // si el primer número > 12, es DD/MM/YYYY
+    // si el tercer número > 31, imposible para día; asume MM/DD/YYYY
+    // si ambos <= 12, asumimos MM/DD/YYYY (estilo U.S.) porque tu ejemplo es 10/20/25
+    let day, month, year = c;
+    if (a > 12) {           // DD/MM/YYYY
+      day = a; month = b;
+    } else if (b > 12) {    // MM/DD/YYYY
+      month = a; day = b;
+    } else {
+      // ambiguo -> preferimos MM/DD/YYYY por tus archivos
+      month = a; day = b;
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  // Intento final: Date.parse
+  const dt = new Date(str);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function parseExcelLikeDate(v) {
+  if (v == null) return null;
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
+  const n = Number(v);
+  if (Number.isFinite(n) && String(v).trim() === String(n)) {
+    // Parece serial Excel
+    const d = parseExcelSerialDate(n);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return parseDateStringFlexible(v);
+}
+
+function parseTimeToHMS(str) {
+  if (!str) return { h:0, m:0, s:0 };
+  const m = String(str).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return { h:0, m:0, s:0 };
+  return { h: Number(m[1])||0, m: Number(m[2])||0, s: Number(m[3])||0 };
+}
+
+function mergeDateAndTime(dateOnly, timeStr) {
+  if (!dateOnly) return null;
+  const { h, m, s } = parseTimeToHMS(timeStr);
+  return new Date(
+    dateOnly.getFullYear(),
+    dateOnly.getMonth(),
+    dateOnly.getDate(),
+    h, m, s, 0
+  );
+}
+
 function stripDiacritics(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
@@ -264,7 +350,8 @@ function buildIngestSig(row) {
     String(row.producto?.toLowerCase() ?? ''),
     String(row.metodo_de_pago?.toLowerCase() ?? ''),
   ].join('|')
-  return crypto.createHash('md5').update(base, 'utf8').digest('hex')
+  const hash = crypto.createHash('md5').update(base, 'utf8').digest('hex')
+  return hash
 }
 
 function pickText(v) {
@@ -524,4 +611,151 @@ export async function mergeAndUpsertpayments(file1, file2, { schema='reportes_su
   await enrichRowsWithIdSocio(final);
   const res = await upsertPayments(rowsToUpsert, { schema })
   return { ...res, merged: merged.length, missesTotal: misses.length, misses: misses }
+}
+
+// Ingesta directa desde Plantilla BD (1 archivo)
+function getCell(obj, names = []) {
+  return firstNonNull(obj, names);
+}
+
+function mapTemplateRowToPayment(row) {
+  
+  const dt = combineDateAndTime(firstNonNull(row, ['fecha_de_registro','fecha de registro']), firstNonNull(row, ['Hora','hora']))
+  const fecha_de_registro = dt ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()) : null
+  const hora =
+    dt ? `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}:${String(dt.getSeconds()).padStart(2, '0')}` : null
+  const fecha_de_valor_dt = parseDateTime(firstNonNull(row, ['fecha_de_valor','fecha de valor']))
+
+  const factura          = pickText(getCell(row, ['Factura','factura']));
+  const id_cargo         = pickText(getCell(row, ['ID Cargo','Id Cargo','id cargo','id_cargo']));
+  const cod_autorizacion = pickText(getCell(row, ['Cód. Autorización','Codigo Autorizacion','cod. autorización','Cod. Autorizacion','cod_autorizacion']));
+  const id_transaccion   = pickText(getCell(row, ['Id. Transacción','ID Transaccion','id_transaccion','Id Transacción']));
+  const id_suscripcion   = pickText(getCell(row, ['Id. Suscripción','ID Suscripcion','id_suscripcion','Id Suscripción']));
+  const evidencia_pago_url = pickText(getCell(row, ['Evidencia URL','evidencia','evidencia_pago_url']));
+
+  const idSocioFile = pickText(getCell(row, ['Id Socio','id_socio','idSocio','id_member','idMember','id_Member']));
+  const socio       = pickText(getCell(row, ['Socio','socio']));
+  const nombre      = pickText(getCell(row, ['Nombre','nombre']));
+  const apellidos   = pickText(getCell(row, ['Apellidos','apellidos']));
+  const email       = pickText(getCell(row, ['Email','Correo','email','correo']));
+  const ine_curp    = pickText(getCell(row, ['INE/Curp','INE_CURP','ine_curp']));
+
+  const producto      = pickText(getCell(row, ['Producto','producto']));
+  const tipo_producto = pickText(getCell(row, ['Tipo producto','tipo producto','tipo_producto']));
+  const concepto      = pickText(getCell(row, ['Concepto','concepto'])) || producto;
+  const tipo          = pickText(getCell(row, ['Tipo','tipo']));
+
+  const precio     = parseMoney(getCell(row, ['Precio','precio']));
+  const cantidad   = parseMoney(getCell(row, ['Cantidad','cantidad'])) ?? 1;
+  const descuento  = parseMoney(getCell(row, ['Descuento','descuento']));
+  const subtotal   = parseMoney(getCell(row, ['Subtotal','subtotal']));
+  const bruto      = parseMoney(getCell(row, ['Bruto','bruto']));
+  const impPct     = parseMoney(getCell(row, ['Impuesto %','Impuesto%','impuesto_porcentaje']));
+  const impuesto   = parseMoney(getCell(row, ['Impuesto','impuesto']));
+  const total      = parseMoney(getCell(row, ['Total','total'])) ?? bruto ?? subtotal ?? null;
+
+  const metodo_de_pago = pickText(getCell(row, ['Método de pago','Metodo de pago','metodo de pago','metodo_de_pago']));
+  const tipo_de_pago   = pickText(getCell(row, ['Tipo de pago','tipo de pago','tipo_de_pago']));
+  const tipo_de_tarjeta= pickText(getCell(row, ['Tipo de tarjeta','tipo de tarjeta','tipo_de_tarjeta','tarjeta']));
+  const no_de_tarjeta  = pickText(getCell(row, ['No. de Tarjeta','Nº de Tarjeta','no_de_tarjeta']));
+  const origen_de_pago = pickText(getCell(row, ['Origen de pago','origen_de_pago']));
+  const canal          = pickText(getCell(row, ['Canal','canal']));
+  const centro         = pickText(getCell(row, ['Centro','centro']));
+  const empleado       = pickText(getCell(row, ['Empleado','empleado']));
+  const estado         = pickText(getCell(row, ['Estado','estado']));
+  const facturado      = pickText(getCell(row, ['Facturado','facturado']));
+  const cupon_codigo   = pickText(getCell(row, ['Cupón','cupon','cupon_codigo']));
+  const cupon_porcentaje = parseMoney(getCell(row, ['% cupón','% Cupón','cupon_porcentaje']));
+  const cupon_monto    = parseMoney(getCell(row, ['$ cupón','$ Cupón','cupon_monto']));
+  const notas          = pickText(getCell(row, ['Notas','notas']));
+  const img            = pickText(getCell(row, ['Img','img','Imagen','imagen']));
+
+  const out = {
+    factura,
+    id_cargo,
+    cod_autorizacion,
+    id_socio: idSocioFile || null,
+    socio,
+    nombre,
+    apellidos,
+    email,
+    ine_curp,
+    producto,
+    tipo_producto,
+    concepto,
+    tipo,
+    precio,
+    cantidad,
+    descuento,
+    subtotal,
+    bruto,
+    impuesto_porcentaje: impPct,
+    impuesto,
+    total,
+    metodo_de_pago,
+    tipo_de_pago,
+    cupon_codigo,
+    cupon_porcentaje,
+    cupon_monto,
+    tarjeta: tipo_de_tarjeta,      // (tipo_de_tarjeta y tarjeta)
+    tipo_de_tarjeta,
+    no_de_tarjeta,
+    origen_de_pago,
+    canal,
+    centro,
+    empleado,
+    estado,
+    facturado,
+    fecha_de_registro,
+    fecha_de_valor: fecha_de_valor_dt ? new Date(fecha_de_valor_dt.getFullYear(), fecha_de_valor_dt.getMonth(), fecha_de_valor_dt.getDate()) : null,
+    hora,
+    notas,
+    img,
+    evidencia_pago_url,
+    id_transaccion,
+    id_suscripcion,
+  };
+  out.idSocio = out.id_socio;
+  out.ingest_sig = buildIngestSig(out);
+  return out;
+}
+
+export async function upsertPaymentsFromTemplateXlsx(xlsxBuffer, { schema='reportes_sukhavati', role='' } = {}) {
+  const rows = readFirstSheet(xlsxBuffer);
+  if (!rows?.length) return { ok:false, error:'La plantilla no tiene filas' };
+
+  const mapped = [];
+  const skipped = [];
+  for (const r of rows) {
+    try {
+      const m = mapTemplateRowToPayment(r);
+      // Validaciones mínimas
+      if (!(m.socio || (m.nombre && m.apellidos))) throw new Error('Falta socio/nombre');
+      if (!m.fecha_de_registro) throw new Error('Falta fecha de registro');
+      if (m.total == null && m.bruto == null && m.subtotal == null) throw new Error('Falta total/bruto/subtotal');
+      if (!m.producto && !m.concepto) throw new Error('Falta producto/concepto');
+      if (!m.ingest_sig) throw new Error('No se pudo generar ingest_sig');
+
+      mapped.push(m);
+    } catch (e) {
+      skipped.push({ row: r, reason: e.message });
+    }
+  }
+
+  if (!mapped.length) return { ok:false, error:'No hay filas válidas para insertar', skipped };
+
+  // Enriquecer id_socio
+  await enrichRowsWithIdSocio(mapped);
+
+  // Rol ≠ admin: filtrar últimos 7 días
+  let rowsToUpsert = mapped;
+  if (role !== 'admin') {
+    rowsToUpsert = filterLastNDays(mapped, ['fecha_de_registro'], 7);
+    if (!rowsToUpsert.length) return { ok:false, error:'No hay pagos dentro de los últimos 7 días.', skipped };
+  }
+
+  // UPSERT con la misma función reutilizada
+  const res = await upsertPayments(rowsToUpsert, { schema });
+
+  return { ok:true, ...res, total_read: rows.length, total_mapped: mapped.length, total_skipped: skipped.length, skipped };
 }
