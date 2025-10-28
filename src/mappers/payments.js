@@ -759,3 +759,221 @@ export async function upsertPaymentsFromTemplateXlsx(xlsxBuffer, { schema='repor
 
   return { ok:true, ...res, total_read: rows.length, total_mapped: mapped.length, total_skipped: skipped.length, skipped };
 }
+
+export async function upsertPaymentsByNaturalKey(file, { schema='reportes_sukhavati', table='pagos' } = {}) {
+  const rows = readFirstSheet(file);
+  const mapped = [];
+  const skipped = [];
+
+  for (const r of rows) {
+    try {
+      const m = mapTemplateRowToPayment(r);
+      mapped.push(m);
+    } catch (e) {
+      skipped.push({ row: r, reason: String(e.message || e) });
+    }
+  }
+
+  if (!rows.length) {
+    return { ok:false, error:'No hay filas válidas para insertar', total_read:0, total_mapped:0, total_skipped:skipped.length, skipped };
+  }
+
+  // Pre-normaliza: convierte '' a null donde aplica (números/fechas/tiempo)
+  const norm = rows.map(r => ({
+    // --- LLAVE NATURAL (tipos) ---
+    id_cargo:           r.id_cargo ?? null,                                       // text
+    id_transaccion:     r.id_transaccion ?? null,                                 // text
+    id_socio:           r.id_socio ?? null,                                       // text
+    metodo_de_pago:     r.metodo_de_pago ?? null,                                 // text
+    total:              r.total === '' ? null : (r.total ?? null),                // numeric
+    producto:           r.producto ?? null,                                       // text
+    fecha_de_registro:  r.fecha_de_registro || null,                              // date (YYYY-MM-DD)
+    fecha_de_valor:     r.fecha_de_valor || null,                                 // date (YYYY-MM-DD)
+
+    // --- OTRAS COLUMNAS ---
+    factura:            r.factura ?? null,
+    cod_autorizacion:   r.cod_autorizacion ?? null,
+    socio:              r.socio ?? null,
+    nombre:             r.nombre ?? null,
+    apellidos:          r.apellidos ?? null,
+    email:              r.email ?? null,
+    ine_curp:           r.ine_curp ?? null,
+    tipo_producto:      r.tipo_producto ?? null,
+    concepto:           r.concepto ?? null,
+    tipo:               r.tipo ?? null,
+    precio:             r.precio === '' ? null : (r.precio ?? null),              // numeric
+    cantidad:           r.cantidad === '' ? null : (r.cantidad ?? null),          // numeric
+    descuento:          r.descuento === '' ? null : (r.descuento ?? null),
+    subtotal:           r.subtotal === '' ? null : (r.subtotal ?? null),
+    bruto:              r.bruto === '' ? null : (r.bruto ?? null),
+    impuesto:           r.impuesto === '' ? null : (r.impuesto ?? null),
+    cupon_codigo:       r.cupon_codigo ?? null,
+    cupon_porcentaje:   r.cupon_porcentaje === '' ? null : (r.cupon_porcentaje ?? null),
+    cupon_monto:        r.cupon_monto === '' ? null : (r.cupon_monto ?? null),
+    tarjeta:            r.tarjeta ?? null,
+    no_de_tarjeta:      r.no_de_tarjeta ?? null,
+    origen_de_pago:     r.origen_de_pago ?? null,
+    canal:              r.canal ?? null,
+    centro:             r.centro ?? null,
+    empleado:           r.empleado ?? null,
+    estado:             r.estado ?? null,
+    facturado:          r.facturado ?? null,
+    hora:               r.hora || null,                                           // 'HH:mm:ss'
+    notas:              r.notas ?? null,
+    img:                r.img ?? null,
+    id_suscripcion:     r.id_suscripcion ?? null,
+    evidencia_pago_url: r.evidencia_pago_url ?? null,
+    impuesto_porcentaje:r.impuesto_porcentaje === '' ? null : (r.impuesto_porcentaje ?? null)
+  }));
+
+  const CHUNK = 400;
+  let inserted = 0;
+  let updated  = 0;
+
+  for (let i = 0; i < norm.length; i += CHUNK) {
+    const chunk = norm.slice(i, i + CHUNK);
+    const payload = JSON.stringify(chunk);
+
+    const sql = `
+      WITH v AS (
+        SELECT
+          -- LLAVE
+          (NULLIF(v->>'id_cargo',''))::text            AS id_cargo,
+          (NULLIF(v->>'id_transaccion',''))::text      AS id_transaccion,
+          (NULLIF(v->>'id_socio',''))::text            AS id_socio,
+          (NULLIF(v->>'metodo_de_pago',''))::text      AS metodo_de_pago,
+          (NULLIF(v->>'total',''))::numeric            AS total,
+          (NULLIF(v->>'producto',''))::text            AS producto,
+          (NULLIF(v->>'fecha_de_registro',''))::date   AS fecha_de_registro,
+          (NULLIF(v->>'fecha_de_valor',''))::date      AS fecha_de_valor,
+
+          -- DEMÁS CAMPOS
+          (NULLIF(v->>'factura',''))::text             AS factura,
+          (NULLIF(v->>'cod_autorizacion',''))::text    AS cod_autorizacion,
+          (NULLIF(v->>'socio',''))::text               AS socio,
+          (NULLIF(v->>'nombre',''))::text              AS nombre,
+          (NULLIF(v->>'apellidos',''))::text           AS apellidos,
+          (NULLIF(v->>'email',''))::text               AS email,
+          (NULLIF(v->>'ine_curp',''))::text            AS ine_curp,
+          (NULLIF(v->>'tipo_producto',''))::text       AS tipo_producto,
+          (NULLIF(v->>'concepto',''))::text            AS concepto,
+          (NULLIF(v->>'tipo',''))::text                AS tipo,
+          (NULLIF(v->>'precio',''))::numeric           AS precio,
+          (NULLIF(v->>'cantidad',''))::numeric         AS cantidad,
+          (NULLIF(v->>'descuento',''))::numeric        AS descuento,
+          (NULLIF(v->>'subtotal',''))::numeric         AS subtotal,
+          (NULLIF(v->>'bruto',''))::numeric            AS bruto,
+          (NULLIF(v->>'impuesto',''))::numeric         AS impuesto,
+          (NULLIF(v->>'cupon_codigo',''))::text        AS cupon_codigo,
+          (NULLIF(v->>'cupon_porcentaje',''))::numeric AS cupon_porcentaje,
+          (NULLIF(v->>'cupon_monto',''))::numeric      AS cupon_monto,
+          (NULLIF(v->>'tarjeta',''))::text             AS tarjeta,
+          (NULLIF(v->>'no_de_tarjeta',''))::text       AS no_de_tarjeta,
+          (NULLIF(v->>'origen_de_pago',''))::text      AS origen_de_pago,
+          (NULLIF(v->>'canal',''))::text               AS canal,
+          (NULLIF(v->>'centro',''))::text              AS centro,
+          (NULLIF(v->>'empleado',''))::text            AS empleado,
+          (NULLIF(v->>'estado',''))::text              AS estado,
+          (NULLIF(v->>'facturado',''))::text           AS facturado,
+          (NULLIF(v->>'hora',''))::time                AS hora,
+          (NULLIF(v->>'notas',''))::text               AS notas,
+          (NULLIF(v->>'img',''))::text                 AS img,
+          (NULLIF(v->>'id_suscripcion',''))::text      AS id_suscripcion,
+          (NULLIF(v->>'evidencia_pago_url',''))::text  AS evidencia_pago_url,
+          (NULLIF(v->>'impuesto_porcentaje',''))::numeric AS impuesto_porcentaje
+        FROM jsonb_array_elements($1::jsonb) AS v
+      ),
+      u AS (  -- UPDATE primero
+        UPDATE ${schema}.${table} t
+        SET
+          factura             = COALESCE(v.factura, t.factura),
+          cod_autorizacion    = COALESCE(v.cod_autorizacion, t.cod_autorizacion),
+          socio               = COALESCE(v.socio, t.socio),
+          nombre              = COALESCE(v.nombre, t.nombre),
+          apellidos           = COALESCE(v.apellidos, t.apellidos),
+          email               = COALESCE(v.email, t.email),
+          ine_curp            = COALESCE(v.ine_curp, t.ine_curp),
+          tipo_producto       = COALESCE(v.tipo_producto, t.tipo_producto),
+          concepto            = COALESCE(v.concepto, t.concepto),
+          tipo                = COALESCE(v.tipo, t.tipo),
+          precio              = COALESCE(v.precio, t.precio),
+          cantidad            = COALESCE(v.cantidad, t.cantidad),
+          descuento           = COALESCE(v.descuento, t.descuento),
+          subtotal            = COALESCE(v.subtotal, t.subtotal),
+          bruto               = COALESCE(v.bruto, t.bruto),
+          impuesto            = COALESCE(v.impuesto, t.impuesto),
+          cupon_codigo        = COALESCE(v.cupon_codigo, t.cupon_codigo),
+          cupon_porcentaje    = COALESCE(v.cupon_porcentaje, t.cupon_porcentaje),
+          cupon_monto         = COALESCE(v.cupon_monto, t.cupon_monto),
+          tarjeta             = COALESCE(v.tarjeta, t.tarjeta),
+          no_de_tarjeta       = COALESCE(v.no_de_tarjeta, t.no_de_tarjeta),
+          origen_de_pago      = COALESCE(v.origen_de_pago, t.origen_de_pago),
+          canal               = COALESCE(v.canal, t.canal),
+          centro              = COALESCE(v.centro, t.centro),
+          empleado            = COALESCE(v.empleado, t.empleado),
+          estado              = COALESCE(v.estado, t.estado),
+          facturado           = COALESCE(v.facturado, t.facturado),
+          hora                = COALESCE(v.hora, t.hora),
+          notas               = COALESCE(v.notas, t.notas),
+          img                 = COALESCE(v.img, t.img),
+          id_suscripcion      = COALESCE(v.id_suscripcion, t.id_suscripcion),
+          evidencia_pago_url  = COALESCE(v.evidencia_pago_url, t.evidencia_pago_url),
+          impuesto_porcentaje = COALESCE(v.impuesto_porcentaje, t.impuesto_porcentaje)
+        FROM v
+        WHERE t.id_cargo          IS NOT DISTINCT FROM v.id_cargo
+          AND t.id_transaccion    IS NOT DISTINCT FROM v.id_transaccion
+          AND t.id_socio          IS NOT DISTINCT FROM v.id_socio
+          AND t.metodo_de_pago    IS NOT DISTINCT FROM v.metodo_de_pago
+          AND t.total             IS NOT DISTINCT FROM v.total
+          AND t.producto          IS NOT DISTINCT FROM v.producto
+          AND t.fecha_de_registro IS NOT DISTINCT FROM v.fecha_de_registro
+          AND t.fecha_de_valor    IS NOT DISTINCT FROM v.fecha_de_valor
+        RETURNING 1
+      ),
+      i AS (  -- INSERT de los que no existen por llave natural
+        INSERT INTO ${schema}.${table} (
+          id_cargo, id_transaccion, id_socio, metodo_de_pago, total, producto, fecha_de_registro, fecha_de_valor,
+          factura, cod_autorizacion, socio, nombre, apellidos, email, ine_curp, tipo_producto, concepto, tipo,
+          precio, cantidad, descuento, subtotal, bruto, impuesto, cupon_codigo, cupon_porcentaje, cupon_monto,
+          tarjeta, no_de_tarjeta, origen_de_pago, canal, centro, empleado, estado, facturado, hora, notas, img,
+          id_suscripcion, evidencia_pago_url, impuesto_porcentaje
+        )
+        SELECT
+          v.id_cargo, v.id_transaccion, v.id_socio, v.metodo_de_pago, v.total, v.producto, v.fecha_de_registro, v.fecha_de_valor,
+          v.factura, v.cod_autorizacion, v.socio, v.nombre, v.apellidos, v.email, v.ine_curp, v.tipo_producto, v.concepto, v.tipo,
+          v.precio, v.cantidad, v.descuento, v.subtotal, v.bruto, v.impuesto, v.cupon_codigo, v.cupon_porcentaje, v.cupon_monto,
+          v.tarjeta, v.no_de_tarjeta, v.origen_de_pago, v.canal, v.centro, v.empleado, v.estado, v.facturado, v.hora, v.notas, v.img,
+          v.id_suscripcion, v.evidencia_pago_url, v.impuesto_porcentaje
+        FROM v
+        LEFT JOIN ${schema}.${table} t
+          ON t.id_cargo          IS NOT DISTINCT FROM v.id_cargo
+         AND t.id_transaccion    IS NOT DISTINCT FROM v.id_transaccion
+         AND t.id_socio          IS NOT DISTINCT FROM v.id_socio
+         AND t.metodo_de_pago    IS NOT DISTINCT FROM v.metodo_de_pago
+         AND t.total             IS NOT DISTINCT FROM v.total
+         AND t.producto          IS NOT DISTINCT FROM v.producto
+         AND t.fecha_de_registro IS NOT DISTINCT FROM v.fecha_de_registro
+         AND t.fecha_de_valor    IS NOT DISTINCT FROM v.fecha_de_valor
+        WHERE t.id_cargo IS NULL
+        RETURNING 1
+      )
+      SELECT
+        (SELECT count(*) FROM u) AS updated,
+        (SELECT count(*) FROM i) AS inserted;
+    `;
+
+    const { rows: [{ updated: updN, inserted: insN }] } = await query(sql, [payload]);
+    updated  += Number(updN)  || 0;
+    inserted += Number(insN)  || 0;
+  }
+
+  return {
+    ok: true,
+    inserted,
+    updated,
+    total_read: rows.length,
+    total_mapped: rows.length,      
+    total_skipped: skipped.length,
+    skipped
+  };
+}
