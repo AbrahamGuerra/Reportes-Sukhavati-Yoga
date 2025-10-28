@@ -445,9 +445,15 @@ function setDefaultWeekIfEmpty() {
   if (!ini || !fin || (ini.value && fin.value)) return;
 
   const today = new Date();
+
+  // Calcular el lunes de la semana actual
   const monday = new Date(today);
-  
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+  // Restar una semana completa (7 días) para ir a la semana anterior
+  monday.setDate(monday.getDate() - 7);
+
+  // Calcular el domingo correspondiente a esa semana anterior
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
@@ -455,7 +461,6 @@ function setDefaultWeekIfEmpty() {
   ini.value = toISO(monday);
   fin.value = toISO(sunday);
 }
-
 
 // carga inicial
 initFilters();
