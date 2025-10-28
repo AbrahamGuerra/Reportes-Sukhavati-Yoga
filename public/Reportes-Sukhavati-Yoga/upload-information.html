@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subir información | Sukhavati</title>
-    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="icon" href="./assets/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="./styles/style.css" />
 </head>
 
@@ -20,6 +20,24 @@
             <p class="muted">Sube archivos Excel (.xlsx) y selecciona qué tipo de información contiene.</p>
 
             <form id="form">
+                <section id="import-help" class="card" hidden>
+                    <header id="import-help-header" class="toggle-header">
+                        <h2>Guía de importación</h2>
+                        <button type="button" id="toggle-help" aria-expanded="false"></button>
+                    </header>
+                    
+                    <div id="import-help-body" class="hidden">
+                        <div class="import-header-line">
+                            <div id="tpl-list" class="file-row"></div>
+                            <div id="source-box">
+                                <span class="muted">Fuente de datos:</span>
+                                <div id="source-links"></div>
+                            </div>
+                        </div>
+                        <div id="examples"></div>
+                    </div>
+                </section>
+
                 <label>Tipo de importación</label>
                 <select id="type">
                     <option value="products">Productos</option>

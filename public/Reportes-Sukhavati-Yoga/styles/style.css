@@ -483,3 +483,208 @@ select {
     padding: 8px 10px;
   }
 }
+
+/* === Import Help (plantillas / ejemplo / fuente) === */
+#import-help {
+  margin-top: 16px;
+}
+
+#import-help h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  margin: 0 0 8px;
+}
+
+#tpl-list .btn {
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+#tpl-list .btn:hover {
+  border-color: #2b343b;
+}
+
+#source-box .muted {
+  color: var(--muted);
+}
+
+#source-box .btn {
+  background: #0f1316;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+#source-box .btn:hover {
+  border-color: #2b343b;
+}
+
+#example-img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: block;
+  margin-top: 12px;
+}
+
+#example-caption {
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  #tpl-list {
+    gap: 10px;
+  }
+
+  #tpl-list .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  #source-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+#examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+#examples figure {
+  margin: 0;
+}
+
+#examples img.example-img {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: block;
+}
+
+#examples figcaption {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+#source-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* === Toggle de Guía de importación === */
+.toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-header h2 {
+  margin: 0;
+}
+
+/* Botón + / – */
+#toggle-help {
+  background: none;
+  border: none;
+  color: var(--text);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+#toggle-help:hover {
+  background: rgba(255, 255, 255, .08);
+}
+
+/* Cerrado → “+”, Abierto → “–” */
+#toggle-help::before {
+  content: "+";
+  display: block;
+}
+
+#toggle-help[aria-expanded="true"]::before {
+  content: "–";
+}
+
+/* Cuerpo colapsable */
+#import-help-body {
+  margin-top: 10px;
+  transition: max-height .3s ease, opacity .3s ease;
+  overflow: hidden;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+#import-help-body.hidden {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Línea superior: Plantilla + Fuente de datos */
+.import-header-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* Contenedor de la plantilla (nombre o link) */
+#tpl-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Contenedor de la fuente de datos */
+#source-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Responsive --- */
+@media (max-width:600px) {
+  #tpl-list {
+    gap: 10px;
+  }
+
+  #tpl-list .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  #source-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
