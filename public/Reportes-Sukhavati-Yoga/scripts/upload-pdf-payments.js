@@ -185,7 +185,7 @@ function limpiar() {
     const el = document.querySelector(id)
     if (el) el.value = ''
   })
-  showEmpty('Ajusta los filters y presiona Buscar')
+  showEmpty('Ajusta los filtros y presiona buscar')
   toast('Filtros limpiados', 'ok')
 }
 
