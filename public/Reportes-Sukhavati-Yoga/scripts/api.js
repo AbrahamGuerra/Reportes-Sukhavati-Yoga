@@ -576,7 +576,13 @@ export async function cargarConsecutivo(filters) {
     metodo: filters.metodo || undefined,
     estado: filters.estado || undefined,
   });
-  const rows = await fetchJSON(`/api/paymentreports/consecutivo${q}`);
+  const token = getToken()
+  const res = await fetch(`/api/paymentreports/consecutivo${q}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const rows = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || json.code || res.statusText)
   const titulo = `CONSECUTIVO ${filters.fecha_inicio} a ${filters.fecha_fin}`
   dataToExport(titulo, rows)
   const columns = [

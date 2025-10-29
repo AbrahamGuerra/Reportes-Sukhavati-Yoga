@@ -1,6 +1,8 @@
 // src/routes/payment-reports.js
 import express from 'express'
 import { query } from '../DB/db.js'
+import { audit } from '../middleware/audit.js'
+import { authRequired } from '../auth/middleware.js'
 
 const router = express.Router()
 
@@ -182,7 +184,7 @@ router.get('/quincena-producto-formapago', async (req, res) => {
  *    -> fn_rpt_cobranza_rango(ini, fin, producto, segmento, metodo, estado)
  *    Acepta ini/fin o fecha_inicio/fecha_fin desde el front
  * =======================================*/
-router.get('/rango', async (req, res) => {
+router.get('/rango', authRequired, audit('report_range'), async (req, res) => {
   try {
     const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
     const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD
@@ -212,7 +214,7 @@ router.get('/rango', async (req, res) => {
  * 8) rango de fechas (producto/segmento/metodo/estado)
  *    -> fn_rpt_cobranza_detalle_rango
  * =======================================*/
-router.get('/consecutivo', async (req, res) => {
+router.get('/consecutivo', authRequired, audit('report_consecutive'), async (req, res) => {
   try {
     const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
     const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD
@@ -294,7 +296,7 @@ router.get('/formapago', async (req, res) => {
 
 // 12) Pagos vs Plan por suscripción
 //    -> reportes_sukhavati.fn_rpt_pagos_vs_plan(p_ini, p_fin, p_socio_pattern, p_producto_pattern)
-router.get('/subscription-payments', async (req, res) => {
+router.get('/subscription-payments', authRequired, audit('report_subscription-payments'), async (req, res) => {
   try {
     const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
     const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD
@@ -315,7 +317,7 @@ router.get('/subscription-payments', async (req, res) => {
 
 // 13) Clases por suscripción
 //    -> reportes_sukhavati.fn_rpt_clases_por_suscripcion(p_ini, p_fin, p_socio_pattern, p_producto_pattern)
-router.get('/subscription-classes', async (req, res) => {
+router.get('/subscription-classes', authRequired, audit('report_subscription-classes'), async (req, res) => {
   try {
     const iniParam = req.query.ini || req.query.fecha_inicio || null; // YYYY-MM-DD
     const finParam = req.query.fin || req.query.fecha_fin || null;    // YYYY-MM-DD

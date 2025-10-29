@@ -1,7 +1,7 @@
 import { requireAuth } from './guard.js'
 import * as XLSX from "https://esm.sh/xlsx";
 import { initFilters, loadProductsSelect, loadEstadosSelect, loadFormaPagoSelect, loadSocios, getFilterValues, 
-  toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport } from './api.js';
+  toggleFilterVisibility, buildQuery, fetchJSON, renderGroupedTable, cargarConsecutivo, dataToExport, getToken } from './api.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor', 'views'])
@@ -46,7 +46,13 @@ function togglePartnerVisibility(show) {
 
 async function cargarMensualFormaPago(filters) {
   const q = buildQuery({ anio: filters.anio, mes: filters.mes, producto: filters.producto, segmento: filters.segmento, estado: filters.estado || undefined });
-  const raw = await fetchJSON(`/api/paymentreports/mensual-formapago${q}`);
+  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+  const res = await fetch(`/api/paymentreports/mensual-formapago${q}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const raw = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || json.code || res.statusText)
   const data = (raw || []).filter(r => String(r.segmento).toUpperCase() !== 'TOTAL');
   const titulo = `PAGOS mensual ${filters.anio}-${String(filters.mes).padStart(2,'0')}`
   dataToExport(titulo, data)
@@ -93,8 +99,13 @@ async function cargarPagosVsPlan(filters) {
     producto:     filters.producto || undefined,
     socio:  filters.socio || undefined,
   });
-  
-  const data = await fetchJSON(`/api/paymentreports/subscription-payments${q}`);
+  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+  const res = await fetch(`/api/paymentreports/subscription-payments${q}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || json.code || res.statusText)
   const titulo = `PAGOS vs PLAN ${filters.fecha_inicio} a ${filters.fecha_fin}`;
   dataToExport(titulo, data);
 
@@ -124,7 +135,13 @@ async function cargarClasesPorSuscripcion(filters) {
     producto:     filters.producto || undefined,
     socio:  filters.socio || undefined,
   });
-  const rows = await fetchJSON(`/api/paymentreports/subscription-classes${q}`);
+  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+  const res = await fetch(`/api/paymentreports/subscription-classes${q}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const rows = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || json.code || res.statusText)
   const titulo = `CLASES por SUSCRIPCIÓN ${filters.fecha_inicio} a ${filters.fecha_fin}`;
   dataToExport(titulo, rows);
 
@@ -179,7 +196,13 @@ async function cargarRangoFormaPago(filters) {
   });
 
   try {
-    const rows = await fetchJSON(`/api/paymentreports/rango${q}`);
+    const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+    const res = await fetch(`/api/paymentreports/rango${q}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const rows = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(json.error || json.code || res.statusText)
     const data = (Array.isArray(rows) ? rows : []).filter(
       r => String(r.metodo_de_pago).toUpperCase() !== 'TOTAL'
     );
