@@ -717,4 +717,80 @@ export async function adminGrantRole({ email, role, reason }) {
   if (!res.ok) throw new Error(json.error || res.statusText)
   return json // { ok:true, message:'ROLE_UPDATED' }
 }
-
+// === Límite de usuarios ===
+export async function adminGetUserLimit() {
+  const token = getToken();
+  const r = await fetch('/api/auth/admin/user-limit', { headers: { 'Authorization': `Bearer ${token}` } });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo obtener el límite');
+  return j.user_max;
+}
+export async function adminSetUserLimit(value) {
+  const token = getToken();
+  const r = await fetch('/api/auth/admin/user-limit', {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+    body: JSON.stringify({ value })
+  });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || 'Error');
+  return j.value;
+}
+// === Gestión de usuarios ===
+export async function adminListUsers({ q = '', active = '' } = {}) {
+  const token = getToken();
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (active !== '') params.set('active', active);
+  const r = await fetch('/api/auth/admin/users?' + params.toString(), { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!r.ok) throw new Error('Error listando usuarios');
+  return await r.json();
+}
+export async function adminPatchUser(id, payload) {
+  const token = getToken();
+  const r = await fetch(`/api/auth/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+    body: JSON.stringify(payload)
+  });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || 'Error');
+  return j.user;
+}
+export async function adminDeleteUser(id) {
+  const token = getToken();
+  const r = await fetch(`/api/auth/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || 'Error');
+  return j;
+}
+// === AUDITORÍA ===
+export async function adminListAuditLogs({
+  q = '',
+  action = '',
+  outcome = '',
+  from = '',
+  to = '',
+  limit = 50,
+  offset = 0,
+} = {}) {
+  const token = getToken();
+  const params = new URLSearchParams({
+    q,
+    action,
+    outcome,
+    from,
+    to,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const r = await fetch(`/api/auth/admin/audit-logs?${params.toString()}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!r.ok) throw new Error('Error listando usuarios');
+  return await r.json();
+}

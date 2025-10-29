@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs'
 import { query } from '../DB/db.js'
 import { sendMail } from '../utils/mailer.js'
 import { authRequired } from '../auth/middleware.js'
+import { audit } from '../middleware/audit.js'
+
 const router = express.Router()
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
@@ -23,50 +25,64 @@ function signUser(user) {
  */
 router.post('/request-register', async (req, res) => {
   try {
-    const { email, name } = req.body || {}
-    const cleanEmail = String(email || '').trim().toLowerCase()
-    if (!cleanEmail) return res.status(400).json({ ok: false, error: 'EMAIL_REQUIRED' })
-    
-    // ¿Ya existe?
+    const { email, name } = req.body || {};
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!cleanEmail) return res.status(400).json({ ok: false, error: 'EMAIL_REQUIRED' });
+
+    // 🔹 Verificar cantidad actual de usuarios
+    const { rows: countRows } = await query(`
+      SELECT COUNT(*) AS total
+      FROM reportes_sukhavati.users
+    `);
+    const totalUsuarios = parseInt(countRows[0].total, 10);
+    if (totalUsuarios >= 10) {
+      return res.status(403).json({
+        ok: false,
+        error: 'USER_LIMIT_REACHED',
+        message: 'No se pueden registrar más de 10 usuarios.'
+      });
+    }
+
+    // 🔹 ¿Ya existe el usuario?
     const { rows: urows } = await query(
       `SELECT id FROM reportes_sukhavati.users WHERE email = $1`,
       [cleanEmail]
-    )
+    );
     if (urows.length) {
-      // Ya hay usuario: responde ok para no filtrar existencia
-      return res.json({ ok: true, message: 'ALREADY_REGISTERED' })
+      return res.json({ ok: true, message: 'ALREADY_REGISTERED' });
     }
 
-    // Buscar rol por código (por ejemplo 'views')
+    // 🔹 Buscar rol "views"
     const { rows: roleRows } = await query(
       `SELECT id FROM reportes_sukhavati.roles WHERE code = $1`,
       ['views']
-    )
+    );
     if (!roleRows.length) {
-      return res.status(500).json({ ok: false, error: 'ROLE_VIEWS_NOT_FOUND' })
+      return res.status(500).json({ ok: false, error: 'ROLE_VIEWS_NOT_FOUND' });
     }
-    const rolId = roleRows[0].id
+    const rolId = roleRows[0].id;
 
-    // Crear usuario preliminar (email_verified=false, password_hash NULL)
+    // 🔹 Crear usuario preliminar
     const { rows: newUserRows } = await query(
       `INSERT INTO reportes_sukhavati.users (name, email, password_hash, id_role, email_verified, active)
        VALUES ($1, $2, NULL, $3, false, true)
        RETURNING id`,
       [name || null, cleanEmail, rolId]
-    )
-    const userId = newUserRows[0].id
+    );
+    const userId = newUserRows[0].id;
 
-    // Crear token de registro con vencimiento (2 horas)
-    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    // 🔹 Token de registro (2 horas)
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const { rows: tokenRows } = await query(
       `INSERT INTO reportes_sukhavati.auth_tokens_register (id_user, expires_in)
        VALUES ($1, $2)
        RETURNING token`,
       [userId, expiresAt]
-    )
-    const token = tokenRows[0].token // <- UUID generado por Postgres
+    );
+    const token = tokenRows[0].token;
 
-    const url = `${process.env.APP_BASE_URL}/register.html?token=${token}`
+    // 🔹 Enviar correo
+    const url = `${process.env.APP_BASE_URL}/register.html?token=${token}`;
     const html = `
       <h2>Registro en Sukhavati</h2>
       <p>Hola ${name ? name + ',' : ''} haz clic en el siguiente botón para completar tu registro:</p>
@@ -74,16 +90,15 @@ router.post('/request-register', async (req, res) => {
       <p>Si el botón no funciona, copia y pega esta URL en tu navegador:</p>
       <p><code>${url}</code></p>
       <p>Este enlace expira en 2 horas.</p>
-    `
-    await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html })
+    `;
+    await sendMail({ to: cleanEmail, subject: 'Completa tu registro', html });
 
-    return res.json({ ok: true, message: 'CORREO ENVIADO' })
+    return res.json({ ok: true, message: 'CORREO ENVIADO' });
   } catch (err) {
-    console.error(err)
-    return res.status(500).json({ ok: false, error: err.message })
+    console.error(err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
-})
-
+});
 
 /**
  * 2) Establecer contraseña por primera vez (con token)
@@ -128,7 +143,7 @@ router.post('/set-password', async (req,res) => {
 /**
  * 3) Login normal (usuario ya registrado)
  */
-router.post('/login', async (req,res) => {
+router.post('/login', audit('login_attempt'), async (req,res) => {
   try {
     const { email, password } = req.body
     if (!email || !password) return res.status(400).json({ ok:false, error:'EMAIL_AND_PASSWORD_REQUIRED' })
@@ -573,6 +588,230 @@ router.post('/register-resend', async (req, res) => {
   } catch (err) {
     console.error(err)
     return res.status(500).json({ ok:false, error: err.message })
+  }
+})
+
+/**
+ * 11) GET límite actual de usuarios
+ */
+router.get('/admin/user-limit', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  const { rows } = await query(`
+    SELECT COALESCE(NULLIF(value, '')::int, 10) AS user_max
+    FROM reportes_sukhavati.settings
+    WHERE key='user_max'
+  `);
+  const user_max = rows.length ? rows[0].user_max : 10;
+  res.json({ ok:true, user_max });
+});
+
+/**
+ * 12) PUT actualizar límite de usuarios
+ */
+router.put('/admin/user-limit', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  const value = parseInt(req.body?.value, 10);
+  if (!Number.isInteger(value) || value < 1) {
+    return res.status(400).json({ ok:false, error:'INVALID_LIMIT' });
+  }
+  await query(`
+    INSERT INTO reportes_sukhavati.settings (key, value)
+    VALUES ('user_max', $1::text)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_in = now()
+  `, [String(value)]);
+
+  res.json({ ok:true, message:'USER_LIMIT_UPDATED', value });
+});
+
+/**
+ * 13) GET listar usuarios (búsqueda simple)
+ */
+router.get('/admin/users', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  const q = String(req.query.q || '').trim().toLowerCase();
+  const active = req.query.active === 'true' ? true : req.query.active === 'false' ? false : null;
+
+  const params = [];
+  let where = [];
+  if (q) {
+    params.push(`%${q}%`);
+    where.push(`(LOWER(u.email) LIKE $${params.length} OR LOWER(COALESCE(u.name,'')) LIKE $${params.length})`);
+  }
+  if (active !== null) {
+    params.push(active);
+    where.push(`u.active = $${params.length}`);
+  }
+  const sql = `
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.active,
+      r.code AS role_code,
+      r.name AS role_name
+    FROM reportes_sukhavati.users u
+    LEFT JOIN reportes_sukhavati.roles r 
+      ON r.id = u.id_role
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+    ORDER BY u.created_in DESC NULLS LAST, u.id DESC
+    LIMIT 200;
+  `;
+  const { rows } = await query(sql, params);
+  res.json(rows);
+});
+
+/**
+ * 14) PATCH actualizar usuario (name, role, active)
+ */
+router.patch('/admin/users/:id', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  const id = req.params.id;
+  const { name, role, active } = req.body || {};
+
+  // Resuelve rol si viene 'role'
+  let id_role = null;
+  if (role) {
+    const { rows } = await query(`SELECT id FROM reportes_sukhavati.roles WHERE code=$1`, [String(role).toLowerCase()]);
+    if (!rows.length) return res.status(400).json({ ok:false, error:'ROLE_NOT_FOUND' });
+    id_role = rows[0].id;
+  }
+
+  const fields = [];
+  const vals = [];
+  if (typeof name !== 'undefined') { vals.push(name || null); fields.push(`name=$${vals.length}`); }
+  if (id_role !== null)         { vals.push(id_role);       fields.push(`id_role=$${vals.length}`); }
+  if (typeof active === 'boolean') { vals.push(active);     fields.push(`active=$${vals.length}`); }
+  if (!fields.length) return res.status(400).json({ ok:false, error:'NO_FIELDS' });
+
+  vals.push(id);
+  const sql = `
+    UPDATE reportes_sukhavati.users
+       SET ${fields.join(', ')}, updated_in=now()
+     WHERE id=$${vals.length}
+     RETURNING id, name, email, active
+  `;
+  try {
+    const { rows } = await query(sql, vals);
+    return res.json({ ok:true, user: rows[0] });
+  } catch (e) {
+    return res.status(400).json({ ok:false, error: e.message });
+  }
+});
+
+/**
+ * 15) DELETE desactivar (soft-delete)
+ */
+router.delete('/admin/users/:id', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  const id = req.params.id;
+  const { rows } = await query(`
+    UPDATE reportes_sukhavati.users
+       SET active=false, updated_in=now()
+     WHERE id=$1
+     RETURNING id, email
+  `, [id]);
+
+  if (!rows.length) return res.status(404).json({ ok:false, error:'USER_NOT_FOUND' });
+  res.json({ ok:true, message:'USER_DEACTIVATED', id: rows[0].id });
+});
+
+/**
+ * 16) Listar roles disponibles (solo admin)
+ */
+router.get('/admin/roles', authRequired, async (req, res) => {
+  const isAdmin = String(req.user?.role || '').trim().toLowerCase() === 'admin';
+  if (!isAdmin) return res.status(403).json({ ok:false, error:'FORBIDDEN' });
+
+  try {
+    const { rows } = await query(`
+      SELECT id, code, name
+      FROM reportes_sukhavati.roles
+      ORDER BY id
+    `);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ ok:false, error: e.message });
+  }
+});
+
+/**
+ * 16) GET /api/auth/admin/audit-logs
+ */
+router.get('/admin/audit-logs', authRequired, async (req, res) => {
+  try {
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role !== 'admin') return res.status(403).json({ ok:false, error:'FORBIDDEN' })
+
+    const {
+      q = '',                // busca en email/route/action
+      action = '',           // ej: login_attempt, role_update
+      outcome = '',          // success | fail
+      from,                  // YYYY-MM-DD
+      to,                    // YYYY-MM-DD
+      limit = 50,
+      offset = 0
+    } = req.query
+
+    const params = []
+    const where = []
+
+    if (q) {
+      params.push(`%${q.toLowerCase()}%`)
+      where.push(`(lower(email::text) LIKE $${params.length} OR lower(route) LIKE $${params.length} OR lower(action) LIKE $${params.length})`)
+    }
+    if (action) {
+      params.push(action.toLowerCase())
+      where.push(`lower(action) = $${params.length}`)
+    }
+    if (outcome) {
+      params.push(outcome.toLowerCase())
+      where.push(`lower(outcome) = $${params.length}`)
+    }
+    if (from) {
+      params.push(from)
+      where.push(`occurred_at::date >= $${params.length}`)
+    }
+    if (to) {
+      params.push(to)
+      where.push(`occurred_at::date <= $${params.length}`)
+    }
+
+    params.push(Number(limit)); const limitIdx = params.length
+    params.push(Number(offset)); const offsetIdx = params.length
+
+    const sql = `
+      WITH base AS (
+        SELECT
+          occurred_at, user_id, email, action, outcome, reason,
+          route, http_status, ip, user_agent, latency_ms, meta
+        FROM reportes_sukhavati.auth_audit_log
+        ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+        ORDER BY occurred_at DESC
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+      )
+      SELECT jsonb_build_object(
+        'rows', jsonb_agg(to_jsonb(base)),
+        'limit', $${limitIdx},
+        'offset', $${offsetIdx}
+      ) AS payload
+      FROM base;
+    `
+
+    const { rows } = await query(sql, params)
+    const payload = rows?.[0]?.payload || { rows: [], limit, offset }
+    res.json(payload)
+  } catch (e) {
+    res.status(500).json({ ok:false, error: e.message })
   }
 })
 

@@ -1,0 +1,232 @@
+/* ====== Botones ====== */
+.btn {
+    background: #1a1d23;
+    color: #e5e5e5;
+    border: 1px solid #2a2d33;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    background: #23272f;
+    color: #fff;
+}
+
+/* Botones principales */
+.btn.primary {
+    background: #007aff;
+    border-color: #007aff;
+    color: #fff;
+}
+
+.btn.primary:hover {
+    background: #379eff;
+}
+
+/* Botones de acción */
+.btn.success {
+    background: #00b06f;
+    border-color: #00b06f;
+    color: #fff;
+}
+
+.btn.success:hover {
+    background: #00d685;
+}
+
+.btn.danger {
+    background: #d93d3d;
+    border-color: #d93d3d;
+    color: #fff;
+}
+
+.btn.danger:hover {
+    background: #ff5555;
+}
+
+/* Botones pequeños */
+.btn.small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+/* Botón "Volver" */
+.btn.back {
+    background: transparent;
+    border: 1px solid #444;
+    color: #aaa;
+}
+
+.btn.back:hover {
+    border-color: #666;
+    color: #fff;
+}
+
+/* === Control Panel: User Limit & User Management ========================= */
+
+/* Tarjeta contenedor (coincide con tu estética oscura y bordes suaves) */
+.card {
+    background: #11141a;
+    border: 1px solid #2a2d33;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+/* Filas de filtros / acciones */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+    margin-top: 8px;
+}
+
+/* Bloques de filtro con etiqueta arriba y control abajo */
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    color: #c9c9c9;
+    font-size: 0.92rem;
+}
+
+/* Inputs y selects en filtros y tabla */
+.filter-item input,
+.filter-item select,
+.table-area table input,
+.table-area table select {
+    background: #0f1217;
+    color: #e5e5e5;
+    border: 1px solid #2a2d33;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.92rem;
+    outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.filter-item input:focus,
+.filter-item select:focus,
+.table-area table input:focus,
+.table-area table select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, .2);
+}
+
+/* Mensajes tenues */
+.muted {
+    color: #9aa0a6;
+    font-size: 0.85rem;
+}
+
+/* Tabla scrollable */
+.table-area {
+    margin-top: 8px;
+}
+
+.table-scroll {
+    max-height: 420px;
+    /* ajusta si necesitas más/menos alto */
+    overflow: auto;
+    border: 1px solid #2a2d33;
+    border-radius: 10px;
+}
+
+/* Tabla base */
+.table-area table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.table-area thead th {
+    position: sticky;
+    top: 0;
+    background: #0f131a;
+    color: #cfd3da;
+    text-align: left;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid #2a2d33;
+    z-index: 1;
+}
+
+.table-area tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #1e2229;
+    color: #e5e5e5;
+    vertical-align: middle;
+}
+
+/* Inputs embebidos en celdas */
+.table-area td input.inp-name {
+    width: 100%;
+    min-width: 160px;
+}
+
+.table-area td .sel-role {
+    min-width: 140px;
+}
+
+.table-area td .sel-active {
+    min-width: 90px;
+}
+
+/* Botones dentro de la tabla */
+.table-area td .btn.small {
+    margin-right: 8px;
+}
+
+/* Estado del límite */
+#msg-user-max {
+    margin-left: 10px;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+    .filter-item {
+        min-width: 140px;
+    }
+
+    .table-area table {
+        font-size: 0.9rem;
+    }
+
+    .table-area td .sel-role {
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 680px) {
+    .row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-item {
+        width: 100%;
+    }
+
+    .table-area table {
+        font-size: 0.88rem;
+    }
+
+    .table-area thead th,
+    .table-area tbody td {
+        padding: 8px 10px;
+    }
+
+    /* Acciones en columna para que no se desborden */
+    .table-area tbody td:last-child {
+        min-width: 200px;
+    }
+
+    .table-area td .btn.small {
+        width: 100%;
+        margin: 6px 0 0 0;
+    }
+}

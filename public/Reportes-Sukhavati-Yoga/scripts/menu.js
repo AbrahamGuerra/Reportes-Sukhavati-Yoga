@@ -40,7 +40,7 @@ document.getElementById('btn-go-payment-reports')?.addEventListener('click', () 
 })
 
 document.getElementById('btn-accept-request-role')?.addEventListener('click', () => {
-  window.location.href = 'admin-roles.html'
+  window.location.href = 'control-panel.html'
 })
 
 const buttons = document.querySelectorAll('.menu-top .btn-square')

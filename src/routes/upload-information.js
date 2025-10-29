@@ -7,11 +7,12 @@ import { upsertSubscriptionsFromXlsx } from '../mappers/subscriptions.js'
 import { upsertActivitiesFromXlsx } from '../mappers/activities.js'
 import { mergeAndUpsertpayments, upsertPaymentsByNaturalKey } from '../mappers/payments.js'
 import { authRequired } from '../auth/middleware.js'
+import { audit } from '../middleware/audit.js'
 
 const router = express.Router()
 const uploadAny = multer({ storage: multer.memoryStorage() }).any()
 
-router.post('/upload', authRequired, uploadAny, async (req, res) => {
+router.post('/upload', audit('upload_information'), authRequired, uploadAny, async (req, res) => {
   const badRequest = (msg) => res.status(400).json({ ok: false, error: msg });
   const serverError = (err, scope = 'upload') => {
     console.error(`${scope} error:`, err);

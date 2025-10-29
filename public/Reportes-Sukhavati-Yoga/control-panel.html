@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de administración | Sukhavati</title>
+  <link rel="icon" href="./assets/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="./styles/style.css" />
+  <link rel="stylesheet" href="./styles/payment-reports.css" />
+  <link rel="stylesheet" href="./styles/control-panel.css" />
+</head>
+
+<body>
+  <main class="container admin-scope">
+    <div class="card payment-reports-container">
+
+      <header>
+        <h1>Solicitudes de cambio de rol</h1>
+        <p class="muted">Administra las solicitudes de cambio de rol de los usuarios.</p>
+      </header>
+
+      <div class="page-wrap" role="region" aria-label="Solicitudes de cambio de rol">
+        <section id="filters" class="filters" aria-label="Filtros de solicitudes">
+          <div class="row">
+            <label class="filter-item" for="sel-req-status">
+              Estado
+              <select id="sel-req-status" aria-label="Estado de solicitud">
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="rechazada">Rechazada</option>
+              </select>
+            </label>
+
+            <button class="btn" id="btn-reload-reqs" type="button" aria-label="Actualizar solicitudes">
+              Actualizar
+            </button>
+          </div>
+        </section>
+
+        <div class="table-area" aria-live="polite">
+          <div class="table-scroll">
+            <table id="table-payment-reports" aria-label="Tabla de solicitudes de cambio de rol">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Usuario</th>
+                  <th scope="col">Correo</th>
+                  <th scope="col">Rol solicitado</th>
+                  <th scope="col">Motivo</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" style="min-width: 180px">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tb-reqs"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <section class="card" style="margin-top:1.5rem" aria-label="Límite de usuarios">
+          <h2>Límite de usuarios</h2>
+          <p class="muted">Define el máximo de cuentas activas permitidas en la plataforma.</p>
+
+          <div class="row">
+            <label class="filter-item" for="inp-user-max">
+              Máximo
+              <input id="inp-user-max" type="number" min="1" step="1" value="10" aria-describedby="msg-user-max" />
+            </label>
+
+            <button class="btn" id="btn-save-user-max" type="button" aria-label="Guardar límite de usuarios">
+              Guardar límite
+            </button>
+
+            <span id="msg-user-max" class="muted" role="status" aria-live="polite"></span>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:1.5rem" aria-label="Gestión de usuarios">
+          <h2>Gestión de usuarios</h2>
+
+          <div class="row">
+            <label class="filter-item" for="inp-user-q">
+              Buscar
+              <input id="inp-user-q" type="text" placeholder="correo o nombre..."
+                aria-label="Buscar por correo o nombre" />
+            </label>
+
+            <label class="filter-item" for="sel-user-active">
+              Estado
+              <select id="sel-user-active" aria-label="Filtrar por estado">
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+              </select>
+            </label>
+
+            <button class="btn" id="btn-user-search" type="button" aria-label="Buscar usuarios">Buscar</button>
+          </div>
+
+          <div class="table-area" style="margin-top:1rem">
+            <div class="table-scroll">
+              <table id="table-admin-users" aria-label="Tabla de usuarios">
+                <thead>
+                  <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Activo</th>
+                    <th scope="col" style="min-width:220px">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tb-users"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <span id="msg-users" class="muted" role="status" aria-live="polite"></span>
+        </section>
+
+        <section class="card" style="margin-top:1.5rem; margin-bottom:1.5rem" aria-label="Auditoría de accesos y acciones">
+          <h2>Auditoría</h2>
+          <p class="muted">Registros de acceso y acciones sensibles (login, cambios de rol, etc.).</p>
+        
+          <div class="row">
+            <label class="filter-item">
+              Buscar
+              <input id="log-q" type="text" placeholder="correo, ruta o acción..." />
+            </label>
+        
+            <label class="filter-item">
+              Acción
+              <input id="log-action" type="text" placeholder="login_attempt, role_update..." />
+            </label>
+        
+            <label class="filter-item">
+              Resultado
+              <select id="log-outcome">
+                <option value="">Todos</option>
+                <option value="success">Éxito</option>
+                <option value="fail">Fallo</option>
+              </select>
+            </label>
+        
+            <label class="filter-item">
+              Desde
+              <input id="log-from" type="date" />
+            </label>
+        
+            <label class="filter-item">
+              Hasta
+              <input id="log-to" type="date" />
+            </label>
+        
+            <button class="btn" id="log-search" type="button">Buscar</button>
+          </div>
+        
+          <div class="table-area" style="margin-top:1rem">
+            <div class="table-scroll">
+              <table aria-label="Tabla de auditoría">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Resultado</th>
+                    <th>Ruta</th>
+                    <th>HTTP</th>
+                    <th>IP</th>
+                    <th>UA</th>
+                    <th>ms</th>
+                  </tr>
+                </thead>
+                <tbody id="tb-audit"></tbody>
+              </table>
+            </div>
+          </div>
+        
+          <div class="row" style="justify-content: flex-end; gap: .5rem;">
+            <button class="btn" id="log-prev" type="button">← Anteriores</button>
+            <button class="btn" id="log-next" type="button">Siguientes →</button>
+          </div>
+        
+          <span id="msg-audit" class="muted" role="status" aria-live="polite"></span>
+        </section>
+
+        <div class="reports-actions">
+          <button class="btn" type="button" onclick="window.location.href='index.html'">
+            ← Volver al inicio
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module" src="./scripts/control-panel.js"></script>
+</body>
+
+</html>
