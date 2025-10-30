@@ -11,7 +11,10 @@ export function audit(action) {
 
         // Enmascarar IP opcionalmente
         // const maskedIp = ip.replace(/\d+$/, '0');
-
+        const statusCode = String(res.statusCode);
+        const result = (statusCode.startsWith('2') || statusCode === '304') 
+          ? 'success' 
+          : 'fail';
         await query(
           `INSERT INTO reportes_sukhavati.auth_audit_log
            (user_id, email, action, outcome, reason, route, http_status, ip, user_agent, latency_ms, meta)
@@ -20,7 +23,7 @@ export function audit(action) {
             user?.id || null,
             user?.email || (req.body?.email || null),
             action,
-            String(res.statusCode).startsWith('2') ? 'success' : 'fail',
+            result,
             res.locals.failReason || null,
             req.originalUrl,
             res.statusCode,

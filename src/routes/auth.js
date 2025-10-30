@@ -815,4 +815,20 @@ router.get('/admin/audit-logs', authRequired, async (req, res) => {
   }
 })
 
+/**
+ * 17) DELETE Elimina todos los registros de auditoría (solo admin)
+ */
+router.delete('/admin/audit-logs', authRequired, async (req, res) => {
+  try {
+    const role = String(req.user?.role || '').toLowerCase();
+    if (role !== 'admin') return res.status(403).json({ ok: false, error: 'FORBIDDEN' });
+
+    await query(`DELETE FROM reportes_sukhavati.auth_audit_log;`);
+    res.json({ ok: true, message: 'AUDIT_LOGS_CLEARED' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 export default router

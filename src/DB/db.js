@@ -12,6 +12,9 @@ const pool = new Pool({
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   ssl: useSSL ? { rejectUnauthorized } : undefined,
+  max: 5,
+  idleTimeoutMillis: 240000,
+  connectionTimeoutMillis: 10000,
 });
 
 export const query = (text, params) => pool.query(text, params);

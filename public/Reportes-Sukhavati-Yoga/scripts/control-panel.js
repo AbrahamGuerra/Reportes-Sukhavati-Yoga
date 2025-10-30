@@ -5,8 +5,9 @@ import {
   adminResolveRoleRequest, adminGetUserLimit, 
   adminSetUserLimit, adminListUsers, 
   adminPatchUser, adminDeleteUser,
-  adminListAuditLogs
+  adminListAuditLogs, getToken
 } from './api.js'
+import { formModal, toast } from './ui/modal.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin'])
@@ -92,7 +93,7 @@ $('#btn-apply')?.addEventListener('click', async () => {
   }
 })
 
-// 🗂️ Cargar solicitudes pendientes de cambio de rol
+// Cargar solicitudes pendientes de cambio de rol
 async function loadReqs() {
   put('#msg', '')
   const status = $('#sel-req-status').value
@@ -242,15 +243,23 @@ document.getElementById('tb-users')?.addEventListener('click', async (ev) => {
   try {
     if (act === 'save') {
       const updated = await adminPatchUser(id, { name, role, active });
-      if (msg) msg.textContent = `Usuario ${updated.email} actualizado`;
+      toast(`Usuario ${updated.email} actualizado`);
+      await loadUsers();
     } else if (act === 'delete') {
-      if (!confirm('¿Desactivar este usuario?')) return;
+      const confirmData = await formModal({
+        title: 'Desactivar usuario',
+        message: `¿Seguro que deseas desactivar al usuario <b>${name || '(sin nombre)'}</b>?`,
+        confirmText: 'Desactivar',
+        cancelText: 'Cancelar'
+      });
+      if (!confirmData) return;
+
       await adminDeleteUser(id);
-      if (msg) msg.textContent = 'Usuario desactivado';
+      toast('Usuario desactivado');
       await loadUsers();
     }
   } catch (e) {
-    if (msg) msg.textContent = e.message || 'Operación fallida';
+    toast(e.message || 'Operación fallida', 'error');
   }
 });
 
@@ -310,6 +319,41 @@ async function loadAudit() {
 document.getElementById('log-search')?.addEventListener('click', () => { auditOffset = 0; loadAudit(); });
 document.getElementById('log-prev')?.addEventListener('click', () => { auditOffset = Math.max(0, auditOffset - auditLimit); loadAudit(); });
 document.getElementById('log-next')?.addEventListener('click', () => { auditOffset += auditLimit; loadAudit(); });
+
+// Eliminar registros de auditoría (usa modal)
+document.getElementById('log-clear')?.addEventListener('click', async () => {
+  const confirmData = await formModal({
+    title: 'Eliminar registros de auditoría',
+    message: '¿Estás seguro de que deseas eliminar <b>todos los registros de auditoría</b>? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar'
+  });
+
+  // Si el usuario cancela o cierra
+  if (!confirmData) return;
+
+  const msg = document.getElementById('msg-audit');
+  msg.textContent = 'Eliminando registros...';
+
+  try {
+    const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+    const res = await fetch('/api/auth/admin/audit-logs', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast('Registros de auditoría eliminados correctamente');
+      await loadAudit();
+    } else {
+      toast(data.error || 'Error eliminando registros', 'error');
+    }
+  } catch (e) {
+    toast(e.message || 'Error eliminando registros', 'error');
+  } finally {
+    msg.textContent = '';
+  }
+});
 
 window.addEventListener('DOMContentLoaded', async () => {
   await loadRoles();
