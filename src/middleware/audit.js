@@ -1,4 +1,4 @@
-import { query } from '../DB/db.js';
+import { query } from '../db/database-connect.js';
 
 export function audit(action) {
   return (req, res, next) => {

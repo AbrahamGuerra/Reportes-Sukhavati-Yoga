@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import XLSX from 'xlsx'
-import { query } from '../DB/db.js'
+import { query } from '../db/database-connect.js'
 
 function normalizeString(v) {
   if (v === null || v === undefined) return null

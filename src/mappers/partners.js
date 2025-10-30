@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import XLSX from 'xlsx'
-import { query } from '../DB/db.js'
+import { query } from '../db/database-connect.js'
 
 dayjs.extend(customParseFormat)
 

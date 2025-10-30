@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: local-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: sukhavati_yoga
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+    ports:
+      - "5432:5432"           
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-appuser} -d ${PGDATABASE:-appdb} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   api:
     build: .
     env_file: .env
@@ -12,6 +30,9 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   caddy:
     image: caddy:2
@@ -29,5 +50,6 @@ services:
         condition: service_healthy
 
 volumes:
+  pg_data:
   caddy_data:
   caddy_config:

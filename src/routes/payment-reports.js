@@ -1,6 +1,6 @@
 // src/routes/payment-reports.js
 import express from 'express'
-import { query } from '../DB/db.js'
+import { query } from '../db/database-connect.js'
 import { audit } from '../middleware/audit.js'
 import { authRequired } from '../auth/middleware.js'
 

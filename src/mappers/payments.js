@@ -2,7 +2,7 @@ import XLSX from 'xlsx'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import crypto from 'crypto'
-import { query } from '../DB/db.js'
+import { query } from '../db/database-connect.js'
 import { filterLastNDays } from '../utils/utils.js'
 
 dayjs.extend(customParseFormat)

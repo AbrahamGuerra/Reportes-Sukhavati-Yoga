@@ -1,6 +1,5 @@
-madigitalmx.com, www.madigitalmx.com {
-
-    # FRONT: carpeta /Reportes-Sukhavati-Yoga dentro de /srv/public
+:80 {
+    # FRONT
     handle /Reportes-Sukhavati-Yoga/* {
         root * /srv/public
         file_server
@@ -10,7 +9,26 @@ madigitalmx.com, www.madigitalmx.com {
     @root path /
     redir @root /Reportes-Sukhavati-Yoga/
 
-    # API: NO usar handle_path para no recortar /api
+    # API (NO handle_path para no recortar /api)
+    handle /api/* {
+        reverse_proxy http://api:3000
+    }
+
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+}
+
+madigitalmx.com, www.madigitalmx.com {
+    handle /Reportes-Sukhavati-Yoga/* {
+        root * /srv/public
+        file_server
+    }
+
+    @root path /
+    redir @root /Reportes-Sukhavati-Yoga/
+
     handle /api/* {
         reverse_proxy http://api:3000
     }
