@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 })
 
+const spinner = document.getElementById('spinner')
+
 const helpBox       = document.getElementById('import-help');
 const tplList       = document.getElementById('tpl-list');
 const sourceBox   = document.getElementById('source-box');
@@ -241,6 +243,7 @@ fileInput?.addEventListener('change', () => {
 });
 
 form?.addEventListener('submit', async (e) => {
+  spinner.classList.remove('hidden')
   e.preventDefault();
 
   const tipo  = typeSel?.value;
@@ -286,4 +289,5 @@ form?.addEventListener('submit', async (e) => {
   } catch (err) {
     result.textContent = JSON.stringify({ ok: false, error: String(err) }, null, 2);
   }
+  finally { spinner.classList.add('hidden') }
 });

@@ -28,6 +28,10 @@
                     
                     <div id="import-help-body" class="hidden">
                         <div class="import-header-line">
+                            <p class="note">
+                                ⚠️ <strong>Nota:</strong> Asegúrate de llenar con datos válidos todas las columnas destacadas en
+                                <span style="color:#b58900;">amarillo</span>, ya que son obligatorias para el proceso de importación.
+                            </p>
                             <div id="tpl-list" class="file-row"></div>
                             <div id="source-box">
                                 <span class="muted">Fuente de datos:</span>
@@ -78,6 +82,11 @@
             <div style="margin-top:14px;">
                 <button class="btn" onclick="window.location.href='index.html'">← Volver al inicio</button>
             </div>
+        </div>
+
+        <div id="spinner" class="hidden">
+            <div class="lds-dual-ring"></div>
+            <p>Subiendo archivos...</p>
         </div>
     </main>
     <script type="module" src="./scripts/upload-information.js"></script>

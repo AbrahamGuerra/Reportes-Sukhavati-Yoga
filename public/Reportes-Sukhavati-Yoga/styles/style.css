@@ -704,6 +704,10 @@ select {
   color: white;
 }
 
+#spinner.hidden {
+  display: none !important;
+}
+
 .lds-dual-ring {
   display: inline-block;
   width: 64px;
