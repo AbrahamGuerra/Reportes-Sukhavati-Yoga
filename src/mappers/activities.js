@@ -35,12 +35,12 @@ function normalizeString(v) {
 
 function buildIngestSig(row) {
   const base = [
+    String(row.id_suscripcion?.toLowerCase() ?? ''),
     String(row.nombre?.toLowerCase() ?? ''),
     String(row.apellidos?.toLowerCase() ?? ''),
     String(row.evento?.toLowerCase() ?? ''),
     String(row.fecha_evento ?? ''),
-    String(row.producto?.toLowerCase() ?? ''),
-    String(row.id_suscripcion?.toLowerCase() ?? ''),
+    String(row.producto?.toLowerCase() ?? '')
   ].join('|')
   return crypto.createHash('md5').update(base, 'utf8').digest('hex')
 }

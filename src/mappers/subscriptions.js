@@ -32,7 +32,9 @@ function buildIngestSig(row) {
     String(row.nombre?.toLowerCase() ?? ''),
     String(row.apellidos?.toLowerCase() ?? ''),
     String(row.producto?.toLowerCase() ?? ''),
+    String(row.metodo_de_pago?.toLowerCase() ?? ''),
     String(row.fecha_de_inicio ?? ''),
+    String(row.fecha_de_fin ?? ''),
   ].join('|')
   return crypto.createHash('md5').update(base, 'utf8').digest('hex')
 }

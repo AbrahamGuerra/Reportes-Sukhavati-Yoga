@@ -1,6 +1,7 @@
 import { requireAuth } from './guard.js'
-import { loadProductsSelect, buildQuery, fetchJSON, getToken } from './api.js'
+import { loadProductsSelect, buildQuery, fetchJSON } from './api.js'
 import { toast } from './ui/modal.js'
+import { uploadFile } from './utils/utils.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor'])
@@ -65,29 +66,8 @@ async function searchpayments(filters) {
   return await fetchJSON(`/api/bucket/payments${q}`)
 }
 
-async function uploadFile(file) {
-  const fd = new FormData()
-  fd.append('file', file)
-
-  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
-  const res = await fetch('/api/bucket/upload', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: fd,
-  })
-
-  if (!res.ok) {
-    // log detallado
-    const text = await res.text().catch(() => '')
-    console.error('Upload error →', res.status, text)
-    throw new Error(`Error subiendo PDF (${res.status})`)
-  }
-  return res.json() // { url, key }
-}
-
-
-async function updateEvidencia(idTransaccion, url) {
-  const res = await fetch(`/api/bucket/payments/${encodeURIComponent(idTransaccion)}/evidencia`, {
+async function updateEvidencia(folio, url) {
+  const res = await fetch(`/api/bucket/payments/${encodeURIComponent(folio)}/evidencia`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
@@ -110,6 +90,7 @@ function render(rows) {
   rows.forEach((r) => {
     const tr = document.createElement('tr')
     tr.innerHTML = `
+      <td>${r.folio ?? ''}</td>
       <td>${r.fecha_de_registro ?? ''}</td>
       <td>${r.socio ?? ''}</td>
       <td>${r.producto ?? r.concepto ?? ''}</td>
@@ -144,11 +125,11 @@ function render(rows) {
           toast('El archivo debe ser PDF', 'error')
           return
         }
+        
+        const { url } = await uploadFile(file, 'payments', r.socio, r.folio, null)
+        await updateEvidencia(r.folio, url)
 
-        const { url } = await uploadFile(file)
-        await updateEvidencia(r.id_transaccion, url)
-
-        tr.cells[8].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver PDF</a>`
+        tr.cells[9].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver PDF</a>`
         toast('El archivo fue subido correctamente', 'ok')
       } catch (err) {
         console.error(err)

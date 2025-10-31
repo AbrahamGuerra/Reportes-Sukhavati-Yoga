@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
+import path from 'path'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { query } from '../db/database-connect.js'
 import { authRequired } from '../auth/middleware.js'
@@ -27,23 +28,27 @@ const sanitize = (s) =>
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-const buildUserPrefix = (user) => {
-  const idOrEmail = user?.id || user?.email || 'anon'
-  const u = sanitize(idOrEmail)
+const buildUserPrefix = (documentType) => {
   const now = new Date()
   const yyyy = now.getFullYear()
   const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
   const base = (process.env.S3_PREFIX || '').replace(/\/+$/, '')
-  // ej: "", "sukhavati", etc.
-  return `${base ? base + '/' : ''}users/${u}/${yyyy}/${mm}`
+  return `${base ? base + '/' : ''}${documentType}/${yyyy}/${mm}/${dd}`
 }
 
-// --- BÚSQUEDA (igual) ---
+const buildNameFile = (data1, data2) => {
+  data1 = sanitize(data1)
+  data2 = sanitize(data2)
+  return `${data1}-${data2}`
+}
+
 router.get('/payments', async (req, res) => {
-  const { idCargo, socio, producto, notas, idTransaccion, idSuscripcion, limit = 50 } = req.query
+  const { folio, idCargo, socio, producto, notas, idTransaccion, idSuscripcion, limit = 50 } = req.query
   const where = []; const vals = []; let i = 1
   const push = (cond, val) => { where.push(cond); vals.push(val) }
 
+  if (folio)          push(`folio = $${i++}`, folio)
   if (idCargo)        push(`id_cargo = $${i++}`, idCargo)
   if (idTransaccion)  push(`id_transaccion = $${i++}`, idTransaccion)
   if (idSuscripcion)  push(`id_suscripcion = $${i++}`, idSuscripcion)
@@ -53,14 +58,13 @@ router.get('/payments', async (req, res) => {
 
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const sql = `
-    SELECT socio, producto, concepto, metodo_de_pago, notas, fecha_de_registro, total,
+    SELECT folio, socio, producto, concepto, metodo_de_pago, notas, fecha_de_registro, total,
            id_cargo, id_transaccion, id_suscripcion, evidencia_pago_url
     FROM reportes_sukhavati.pagos
     ${whereSql}
     ORDER BY fecha_de_registro DESC NULLS LAST
     LIMIT ${Number(limit) || 50};
   `
-
   try {
     const { rows } = await query(sql, vals)
     res.json(rows)
@@ -73,20 +77,50 @@ router.get('/payments', async (req, res) => {
 // --- UPLOAD A S3 (con carpeta por usuario) ---
 router.post('/upload', authRequired, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'NO_FILE' })
-  if (req.file.mimetype !== 'application/pdf') return res.status(400).json({ error: 'ONLY_PDF' })
+  const allowedTypes = [
+    'application/pdf',
+    'application/vnd.ms-excel', // .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'text/csv' // .csv
+  ]
+
+  const { mimetype } = req.file
+  const extension = path.extname(req.file.originalname).toLowerCase()
+  if (!allowedTypes.includes(mimetype)) {
+    return res.status(400).json({
+      error: 'ONLY_PDF_OR_EXCEL',
+      contentType: mimetype
+    })
+  }
 
   const bucket = process.env.S3_BUCKET
-  const userPrefix = buildUserPrefix(req.user) // <- users/<user>/<yyyy>/<mm>
+  const documentType = req.headers['documentyype']
 
-  const baseName = sanitize(req.file.originalname.replace(/\.pdf$/i, '')) || 'documento'
-  const key = `${userPrefix}/${Date.now()}-${baseName}.pdf`
+  let nameFile = ''
+  if(documentType === 'payments'){
+    const documentUser = req.headers['documentuser']
+    const documentFolio = req.headers['documentfolio']
+    nameFile = buildNameFile(documentUser, documentFolio)
+  }
+  else if(documentType === 'uploadinfo'){
+    const user = (req?.user?.email || "").split("@")[0].replace(/[^a-zA-Z0-9]/g, "")
+    const documentDataInfo = req.headers['documentdatainfo']
+    nameFile = buildNameFile(user, documentDataInfo)
+  }
+  else{
+    return res.status(400).json({ error: 'NO SE PUEDE ALMACENAR EL DOCUMENTO' })
+  }
+
+  const userPrefix = buildUserPrefix(documentType)
+  const baseName = sanitize(nameFile.replace(/\.[^/.]+$/, '')) || 'documento'
+  const key = `${userPrefix}/${baseName}${extension}`
 
   try {
     await s3.send(new PutObjectCommand({
       Bucket: bucket,
       Key: key,
       Body: req.file.buffer,
-      ContentType: 'application/pdf',
+      ContentType: mimetype,
       // ⚠️ si tu bucket NO es público, quita ACL y sirve por presigned URL o CloudFront
       // ACL: 'public-read',
     }))
@@ -100,16 +134,16 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
   }
 })
 
-// --- GUARDAR URL EN DB (igual) ---
-router.put('/payments/:idTransaccion/evidencia', async (req, res) => {
-  const { idTransaccion } = req.params
+// --- GUARDAR URL EN DB ---
+router.put('/payments/:folio/evidencia', async (req, res) => {
+  const { folio } = req.params
   const { url } = req.body
   if (!url) return res.status(400).json({ error: 'URL_REQUIRED' })
 
   try {
     const { rowCount } = await query(
-      `UPDATE reportes_sukhavati.pagos SET evidencia_pago_url = $1 WHERE id_transaccion = $2`,
-      [url, idTransaccion]
+      `UPDATE reportes_sukhavati.pagos SET evidencia_pago_url = $1 WHERE folio = $2`,
+      [url, folio]
     )
     if (!rowCount) return res.status(404).json({ error: 'NOT_FOUND' })
     res.json({ ok: true })

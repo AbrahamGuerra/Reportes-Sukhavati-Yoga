@@ -339,9 +339,10 @@ function mergePayments(reporteRows, historicoRows) {
 
 function buildIngestSig(row) {
   const base = [
-    String(row.idSocio?.toLowerCase() ?? ''),
+    String(row.id_cargo?.toLowerCase() ?? ''),
     String(row.id_transaccion?.toLowerCase() ?? ''),
     String(row.id_suscripcion?.toLowerCase() ?? ''),
+    String(row.idSocio?.toLowerCase() ?? ''),
     String(row.socio?.toLowerCase() ?? ''),
     String(row.fecha_de_registro ?? ''),
     String(row.fecha_de_valor ?? ''),

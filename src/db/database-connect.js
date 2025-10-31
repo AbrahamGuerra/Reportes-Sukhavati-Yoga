@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg';
 
 dotenv.config();
-const useSSL = (process.env.PGSSL || '').toLowerCase() === 'true';
+const useSSL = (process.env.PGSSL || '').toLowerCase() === 'false';
 const rejectUnauthorized = (process.env.PGSSL_REJECT_UNAUTHORIZED || '').toLowerCase() !== 'false';
 
 const pool = new Pool({

@@ -1,4 +1,5 @@
 import { requireAuth } from './guard.js'
+import { uploadFile } from './utils/utils.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor'])
@@ -281,6 +282,7 @@ form?.addEventListener('submit', async (e) => {
     })
     const json = await resp.json();
     result.textContent = JSON.stringify(json, null, 2);
+    files.forEach(async file => await uploadFile(file, 'uploadinfo', null, null, tipo));
   } catch (err) {
     result.textContent = JSON.stringify({ ok: false, error: String(err) }, null, 2);
   }

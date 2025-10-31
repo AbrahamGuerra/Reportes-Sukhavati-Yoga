@@ -28,13 +28,12 @@ function onlyDigits(s) {
 
 function buildIngestSig(row) {
   const parts = []
-  for (const k of ['id_socio','id_socio_externo','email']) {
-    parts.push(String(row[k]?.toLowerCase() ?? ''))
+
+  for (const k of ['id_socio', 'socio', 'fecha_de_nacimiento', 'email', 'movil']) {
+    const val = row[k]?.toString().trim().toLowerCase() || ''
+    parts.push(val)
   }
-  if (!parts.some(x => x)) {
-    parts.push(String(row.socio?.toLowerCase() ?? ''))
-    parts.push(String(row.fecha_de_nacimiento ?? ''))
-  }
+
   const base = parts.join('|')
   return crypto.createHash('md5').update(base, 'utf8').digest('hex')
 }
