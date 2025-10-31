@@ -1,7 +1,9 @@
 import { requireAuth } from './guard.js'
 import { loadProductsSelect, buildQuery, fetchJSON } from './api.js'
 import { toast } from './ui/modal.js'
-import { uploadFile } from './utils/utils.js'
+import { uploadFile, createAndUploadFile } from './utils/utils.js'
+
+const spinner = document.getElementById('spinner')
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['admin', 'editor'])
@@ -39,6 +41,7 @@ function getFilters() {
 
     return {
       idCargo: document.querySelector('#filter-id-charge')?.value?.trim() || '',
+      folio: document.querySelector('#filter-folio')?.value?.trim() || '',
       socio: document.querySelector('#filter-partner')?.value?.trim() || '',
       producto: document.querySelector('#filter-product')?.value?.trim() || '',
       notas: document.querySelector('#filter-notes')?.value?.trim() || '',
@@ -52,6 +55,7 @@ function getFilters() {
 
   return {
     idCargo: document.querySelector('#filter-id-charge')?.value?.trim() || '',
+    folio: document.querySelector('#filter-folio')?.value?.trim() || '',
     socio: document.querySelector('#filter-partner')?.value?.trim() || '',
     producto: document.querySelector('#filter-product')?.value?.trim() || '',
     notas: document.querySelector('#filter-notes')?.value?.trim() || '',
@@ -61,7 +65,7 @@ function getFilters() {
   }
 }
 
-async function searchpayments(filters) {
+async function searchPayments(filters) {
   const q = buildQuery(filters)
   return await fetchJSON(`/api/bucket/payments${q}`)
 }
@@ -73,6 +77,16 @@ async function updateEvidencia(folio, url) {
     body: JSON.stringify({ url }),
   })
   if (!res.ok) throw new Error('Error actualizando evidencia')
+  return res.json()
+}
+
+async function updateComprobante(folio, url) {
+  const res = await fetch(`/api/bucket/payments/${encodeURIComponent(folio)}/comprobante`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+  if (!res.ok) throw new Error('Error actualizando comprobante')
   return res.json()
 }
 
@@ -102,19 +116,30 @@ function render(rows) {
       <td>
         ${
           r.evidencia_pago_url
-            ? `<a class="url" href="${r.evidencia_pago_url}" target="_blank" rel="noopener">ver PDF</a>`
+            ? `<a class="url" href="${r.evidencia_pago_url}" target="_blank" rel="noopener">ver evidencia</a>`
+            : '<span class="muted">—</span>'
+        }
+      </td>
+      <td>
+        ${
+          r.comprobante_url
+            ? `<a class="url" href="${r.comprobante_url}" target="_blank" rel="noopener">ver comprobante</a>`
             : '<span class="muted">—</span>'
         }
       </td>
       <td class="row-actions">
         <input type="file" accept="application/pdf" class="file" />
+        <button class="btn-generate">Generar Recibo</button>
       </td>
     `
-    const fileInput = tr.querySelector('input[type="file"]')
 
+    const fileInput = tr.querySelector('.file')
+    const btnGenerate = tr.querySelector('.btn-generate')
+
+    //Subir PDF de evidencia de pago
     fileInput.addEventListener('change', async (ev) => {
+      spinner.classList.remove('hidden')
       ev.preventDefault()
-      ev.stopPropagation()
       try {
         const file = fileInput?.files?.[0]
         if (!file) {
@@ -125,16 +150,32 @@ function render(rows) {
           toast('El archivo debe ser PDF', 'error')
           return
         }
-        
+
         const { url } = await uploadFile(file, 'payments', r.socio, r.folio, null)
         await updateEvidencia(r.folio, url)
-
-        tr.cells[9].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver PDF</a>`
-        toast('El archivo fue subido correctamente', 'ok')
+        tr.cells[9].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver evidencia</a>`
+        toast('Evidencia subida correctamente', 'ok')
       } catch (err) {
         console.error(err)
-        toast('Falló la carga/actualización', 'error')
+        toast('Falló la carga de la evidencia', 'error')
       }
+      finally { spinner.classList.add('hidden') }
+    })
+
+    //Generar y subir comprobante PDF
+    btnGenerate.addEventListener('click', async (ev) => {
+      spinner.classList.remove('hidden')
+      ev.preventDefault()
+      try {
+        const { url } = await createAndUploadFile(r, 'receipts')
+        await updateComprobante(r.folio, url)
+        tr.cells[10].innerHTML = `<a class="url" href="${url}" target="_blank" rel="noopener">ver comprobante</a>`
+        toast('Comprobante generado correctamente', 'ok')
+      } catch (err) {
+        console.error(err)
+        toast('Falló la generación del comprobante', 'error')
+      }
+      finally { spinner.classList.add('hidden') }
     })
 
     tbody.appendChild(tr)
@@ -145,7 +186,7 @@ async function buscar() {
   showLoading()
   const filters = getFilters()
   try {
-    const data = await searchpayments(filters)
+    const data = await searchPayments(filters)
     render(data)
   } catch (err) {
     console.error('Error buscando payments', err)
@@ -162,6 +203,7 @@ function limpiar() {
     '#filter-notes',
     '#filter-id-transaction',
     '#filter-id-subscription',
+    '#filter-folio'
   ].forEach((id) => {
     const el = document.querySelector(id)
     if (el) el.value = ''

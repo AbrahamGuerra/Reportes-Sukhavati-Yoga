@@ -13,8 +13,6 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 
-/** --- Static files --- **/
-
 // Subidas públicas (corrige el path relativo y deja URL estable)
 app.use(
   '/sukhavati/users',
@@ -35,7 +33,7 @@ app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-/** --- API (con prefijo /api) --- **/
+/** --- API --- **/
 app.use('/api/information', uploadInformation)
 app.use('/api/paymentreports', paymentReports)
 app.use('/api/bucket', bucket)

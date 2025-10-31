@@ -25,3 +25,25 @@ export async function uploadFile(file, type, socio, folio, dataInfo) {
   }
   return res.json()
 }
+
+export async function createAndUploadFile(data, type) {
+  const formData = new FormData()
+  formData.append('data', JSON.stringify(data));
+  const token = (typeof getToken === 'function' ? getToken() : null) || localStorage.getItem('token') || ''
+  const res = await fetch('/api/bucket/upload', {
+    method: 'POST',
+    headers: 
+    { 
+      Authorization: `Bearer ${token}`,
+      documentyype: `${type}`,
+    },
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error('Upload error →', res.status, text)
+    throw new Error(`Error subiendo archivo (${res.status})`)
+  }
+  return res.json()
+}

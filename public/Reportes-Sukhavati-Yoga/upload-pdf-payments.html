@@ -21,7 +21,11 @@
             <section id="filters" class="filters">
                 <div class="row">
                     <label class="filter-item">ID CARGO
-                        <input id="filter-id-charge" type="text" placeholder="ej. ch_123..." />
+                        <input id="filter-id-charge" type="text" placeholder="ej. 123..." />
+                    </label>
+
+                    <label class="filter-item">FOLIO
+                        <input id="filter-folio" type="text" placeholder="ej. 123..." />
                     </label>
 
                     <label class="filter-item">ID TRANSACCIÓN
@@ -83,12 +87,18 @@
                             <th>Id transacción</th>
                             <th>Id suscripción</th>
                             <th>Evidencia (URL)</th>
+                            <th>Comprobante (URL)</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tbody"></tbody>
                 </table>
             </div>
+        </div>
+
+        <div id="spinner" class="hidden">
+            <div class="lds-dual-ring"></div>
+            <p>Subiendo y generando PDF...</p>
         </div>
     </main>
     <script type="module" src="./scripts/upload-pdf-payments.js"></script>

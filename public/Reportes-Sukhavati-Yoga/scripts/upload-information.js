@@ -29,7 +29,7 @@ const IMPORT_INFO = {
   products: {
     title: 'Productos',
     templates: [
-      { label: 'Plantilla Productos.xlsx', href: '/assets/templates/Plantilla_Productos.xlsx' }
+      { label: 'Plantilla Productos.xlsx', href: './assets/templates/Plantilla_Productos.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Productos.png', caption: 'Ejemplo de productos' }
@@ -42,7 +42,7 @@ const IMPORT_INFO = {
   coupons: {
     title: 'Cupones',
     templates: [
-      { label: 'Plantilla Cupones.xlsx', href: '/assets/templates/Plantilla_Cupones.xlsx' }
+      { label: 'Plantilla Cupones.xlsx', href: './assets/templates/Plantilla_Cupones.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Cupones.png', caption: 'Ejemplo de cupones' }
@@ -55,7 +55,7 @@ const IMPORT_INFO = {
   partners: {
     title: 'Socios',
     templates: [
-      { label: 'Plantilla Socios.xlsx', href: '/assets/templates/Plantilla_Socios.xlsx' }
+      { label: 'Plantilla Socios.xlsx', href: './assets/templates/Plantilla_Socios.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Socios.png', caption: 'Ejemplo de socios' }
@@ -68,7 +68,7 @@ const IMPORT_INFO = {
   subscriptions: {
     title: 'Suscripciones',
     templates: [
-      { label: 'Plantilla Suscripciones.xlsx', href: '/assets/templates/Plantilla_Suscripciones.xlsx' }
+      { label: 'Plantilla Suscripciones.xlsx', href: './assets/templates/Plantilla_Suscripciones.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Suscripciones.png', caption: 'Ejemplo de suscripciones' }
@@ -81,7 +81,7 @@ const IMPORT_INFO = {
   activities: {
     title: 'Actividades',
     templates: [
-      { label: 'Plantilla Actividades.xlsx', href: '/assets/templates/Plantilla_Actividades.xlsx' }
+      { label: 'Plantilla Actividades.xlsx', href: './assets/templates/Plantilla_Actividades.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Actividades.png', caption: 'Ejemplo de actividades' }
@@ -94,8 +94,8 @@ const IMPORT_INFO = {
   payments: {
     title: 'Pagos',
     templates: [
-      { label: 'Plantilla Reporte.xlsx',  href: '/assets/templates/Plantilla_Reporte_Detallado_Pagos.xlsx' },
-      { label: 'Plantilla Histórico.xlsx', href: '/assets/templates/Plantilla_Historico_Pagos.xlsx' }
+      { label: 'Plantilla Reporte.xlsx',  href: './assets/templates/Plantilla_Reporte_Detallado_Pagos.xlsx' },
+      { label: 'Plantilla Histórico.xlsx', href: './assets/templates/Plantilla_Historico_Pagos.xlsx' }
     ],
     examples: [
       { src: './assets/examples/Ejemplo_Reporte_Detallado_Pagos.png',            caption: 'Ejemplo de reporte detallado' },
@@ -110,7 +110,7 @@ const IMPORT_INFO = {
   payments_template: {
     title: 'Pagos (plantilla BD)',
     templates: [
-      { label: 'Plantilla Pagos.xlsx', href: '/assets/templates/Plantilla_Pagos.xlsx' }
+      { label: 'Plantilla Pagos.xlsx', href: './assets/templates/Plantilla_Pagos.xlsx' }
     ],
     examples: [
     ],

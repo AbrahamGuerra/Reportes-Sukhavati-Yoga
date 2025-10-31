@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import path from 'path'
+import { renderReceiptToBuffer } from '../utils/pdf.js'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { query } from '../db/database-connect.js'
 import { authRequired } from '../auth/middleware.js'
@@ -43,6 +44,20 @@ const buildNameFile = (data1, data2) => {
   return `${data1}-${data2}`
 }
 
+function safeParseMaybeJSON(value) {
+  if (value == null) return {};
+  if (typeof value === 'object') return value;
+
+  const s = String(value).trim();
+  if (!s || s === '[object Object]') return {};
+
+  try {
+    return JSON.parse(s);
+  } catch {
+    return {};
+  }
+}
+
 router.get('/payments', async (req, res) => {
   const { folio, idCargo, socio, producto, notas, idTransaccion, idSuscripcion, limit = 50 } = req.query
   const where = []; const vals = []; let i = 1
@@ -59,7 +74,7 @@ router.get('/payments', async (req, res) => {
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const sql = `
     SELECT folio, socio, producto, concepto, metodo_de_pago, notas, fecha_de_registro, total,
-           id_cargo, id_transaccion, id_suscripcion, evidencia_pago_url
+           id_cargo, id_transaccion, id_suscripcion, evidencia_pago_url, comprobante_url
     FROM reportes_sukhavati.pagos
     ${whereSql}
     ORDER BY fecha_de_registro DESC NULLS LAST
@@ -76,7 +91,38 @@ router.get('/payments', async (req, res) => {
 
 // --- UPLOAD A S3 (con carpeta por usuario) ---
 router.post('/upload', authRequired, upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'NO_FILE' })
+  const documentType = req.headers['documentyype']
+
+  let nameFile = ''
+  if(documentType === 'payments'){
+    const documentUser = req.headers['documentuser']
+    const documentFolio = req.headers['documentfolio']
+    nameFile = buildNameFile(documentUser, documentFolio)
+  }
+  else if(documentType === 'uploadinfo'){
+    const user = (req?.user?.email || "").split("@")[0].replace(/[^a-zA-Z0-9]/g, "")
+    const documentDataInfo = req.headers['documentdatainfo']
+    nameFile = buildNameFile(user, documentDataInfo)
+  }
+  else if (documentType === 'receipts') {
+    const parsedData = safeParseMaybeJSON(req.body.data)
+    if (!parsedData || Object.keys(parsedData).length === 0) {
+      return res.status(400).json({ error: 'INVALID_OR_MISSING_DATA' })
+    }
+    nameFile = buildNameFile(parsedData?.socio || 'recibo', parsedData?.folio)
+    const pdfBuffer = await renderReceiptToBuffer(parsedData)
+    const fauxFile = {
+      buffer: pdfBuffer,
+      originalname: `${nameFile}.pdf`,
+      mimetype: 'application/pdf'
+    }
+    req.file = fauxFile;
+  }
+  else{
+    return res.status(400).json({ error: 'NO SE PUEDE ALMACENAR EL DOCUMENTO' })
+  }
+
+  if (!req.file) return res.status(400).json({ error: 'NO FILE' })
   const allowedTypes = [
     'application/pdf',
     'application/vnd.ms-excel', // .xls
@@ -94,23 +140,6 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
   }
 
   const bucket = process.env.S3_BUCKET
-  const documentType = req.headers['documentyype']
-
-  let nameFile = ''
-  if(documentType === 'payments'){
-    const documentUser = req.headers['documentuser']
-    const documentFolio = req.headers['documentfolio']
-    nameFile = buildNameFile(documentUser, documentFolio)
-  }
-  else if(documentType === 'uploadinfo'){
-    const user = (req?.user?.email || "").split("@")[0].replace(/[^a-zA-Z0-9]/g, "")
-    const documentDataInfo = req.headers['documentdatainfo']
-    nameFile = buildNameFile(user, documentDataInfo)
-  }
-  else{
-    return res.status(400).json({ error: 'NO SE PUEDE ALMACENAR EL DOCUMENTO' })
-  }
-
   const userPrefix = buildUserPrefix(documentType)
   const baseName = sanitize(nameFile.replace(/\.[^/.]+$/, '')) || 'documento'
   const key = `${userPrefix}/${baseName}${extension}`
@@ -134,22 +163,34 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
   }
 })
 
-// --- GUARDAR URL EN DB ---
-router.put('/payments/:folio/evidencia', async (req, res) => {
-  const { folio } = req.params
+// --- GUARDAR URL (EVIDENCIA o COMPROBANTE) ---
+router.put('/payments/:folio/:field', async (req, res) => {
+  const { folio, field } = req.params
   const { url } = req.body
+
   if (!url) return res.status(400).json({ error: 'URL_REQUIRED' })
+
+  // Validar campo permitido
+  const allowed = ['evidencia', 'comprobante']
+  if (!allowed.includes(field))
+    return res.status(400).json({ error: 'INVALID_FIELD', allowed })
+
+  // Mapear campo a columna real
+  const column =
+    field === 'evidencia' ? 'evidencia_pago_url' : 'comprobante_url'
 
   try {
     const { rowCount } = await query(
-      `UPDATE reportes_sukhavati.pagos SET evidencia_pago_url = $1 WHERE folio = $2`,
+      `UPDATE reportes_sukhavati.pagos SET ${column} = $1 WHERE folio = $2`,
       [url, folio]
     )
+
     if (!rowCount) return res.status(404).json({ error: 'NOT_FOUND' })
-    res.json({ ok: true })
+
+    res.json({ ok: true, field, folio, url })
   } catch (err) {
     console.error(err)
-    res.status(500).json({ error: 'DB_UPDATE_ERROR' })
+    res.status(500).json({ error: 'DB_UPDATE_ERROR', details: err.message })
   }
 })
 
